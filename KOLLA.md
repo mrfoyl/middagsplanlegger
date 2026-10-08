@@ -34,6 +34,10 @@ Utskriften er WhatsApp-formatert og kan sendes rett til Ole.
    - `plan ekstra <produkt-id> [antall] --navn "..." --pris 22.72` legger til varer
      som ikke hører til en rett, for eksempel «vi trenger mer kyllingbuljong». Finn
      ID-en med `produkt sok`. `plan ekstra-fjern <produkt-id>` tar varen ut igjen.
+   - Planleggeren bytter selv til rimeligste likeverdige vare (samme type, ingen
+     annen variant, sammenlignet på faktisk behov). Byttene står under «Byttet til
+     rimeligere». Vil Ole ha originalen: `plan original <vare>`. `plan billigst`
+     kjører prissjekken på nytt.
 3. Når Ole sier at planen ser bra ut: `plan godkjenn`. Det viser hva som legges
    i kurven («før»). Send det til Ole.
 4. Når Ole sier «legg i kurven» eller lignende: `plan kurv --utfor`. Send «etter»-

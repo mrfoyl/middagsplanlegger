@@ -177,6 +177,14 @@ def cmd_plan(a):
         linje = planlegger.erstatt(oda, plan, p, " ".join(vare), int(pid), a.navn, a.pris or 0.0)
         print(f"{linje['tittel']} → produkt {pid}")
         print(rapport.handleliste(planlegger.handleliste_for(oda, plan, p)))
+    elif h == "billigst":
+        bytter = planlegger.optimaliser_priser(oda, plan, p, logg=lambda m: print(m, file=sys.stderr))
+        print(f"{len(bytter)} nye prisbytter." if bytter else "Fant ingen rimeligere likeverdige varer.")
+        _vis_plan(oda, plan, p)
+    elif h == "original":
+        fra = planlegger.original(oda, plan, p, " ".join(a.args))
+        print(f"Bruker originalen igjen: {fra}")
+        _vis_plan(oda, plan, p)
     elif h == "ekstra":
         pid, *rest = a.args
         antall = int(rest[0]) if rest else 1
@@ -249,7 +257,7 @@ def parser():
     se.set_defaults(func=cmd_egen)
 
     spl = sub.add_parser("plan", help="ukesplan")
-    spl.add_argument("handling", choices=["lag", "vis", "json", "bytt", "dobbel", "fri", "ferdigmiddag", "avklar", "erstatt", "ekstra", "ekstra-fjern", "godkjenn", "kurv", "gjenapne", "ferdig"])
+    spl.add_argument("handling", choices=["lag", "vis", "json", "bytt", "dobbel", "fri", "ferdigmiddag", "avklar", "erstatt", "ekstra", "ekstra-fjern", "billigst", "original", "godkjenn", "kurv", "gjenapne", "ferdig"])
     spl.add_argument("args", nargs="*")
     spl.add_argument("--uke", help="f.eks. 2026-W42 (standard: neste uke)")
     spl.add_argument("--aktivitet", help="ekstra aktivitetsdager denne uken, f.eks. tir,tor")

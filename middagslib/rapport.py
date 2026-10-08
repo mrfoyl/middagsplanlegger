@@ -47,6 +47,11 @@ def plan(plan_: dict, liste: dict) -> str:
     linjer += [dagslinje(d) for d in dager]
     linjer.append("")
     linjer.append(handleliste(liste))
+    if plan_.get("bytter"):
+        spart = sum(b["spart"] for b in plan_["bytter"].values())
+        linjer.append(f"*Byttet til rimeligere* (sparer ca {_kr(spart)}, angre med «plan original <vare>»)")
+        for b in plan_["bytter"].values():
+            linjer.append(f"  • {b['tittel']}: {b['til']} i stedet for {b['fra']} (−{_kr(b['spart'])})")
     if plan_.get("ekstra"):
         linjer.append("*Ekstra (utenom rettene)*")
         linjer += [f"  {x['antall']}× {x['navn']}" for x in plan_["ekstra"]]

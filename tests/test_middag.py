@@ -30,6 +30,7 @@ class FalskOda:
         self.kurv_innhold = {}
         self.lagt_til = []
         self.lister_laget = []
+        self.produkter = {}
         self.liste_varer = []
 
     def sok_oppskrift(self, sok=None, side=1, filtre=("meal:65",)):
@@ -37,6 +38,9 @@ class FalskOda:
         if fil.exists():
             return json.loads(fil.read_text())
         return {"items": []}
+
+    def sok_produkt(self, sok, side=1):
+        return {"items": self.produkter.get(sok, [])}
 
     def oppskrift(self, oid):
         return fixture_oppskrift(oid)
@@ -393,6 +397,45 @@ class TestKurvflyt(MedData):
         plan = planlegger.lag(self.oda, self.p, UKE, onsket=["3004"])
         planlegger.avklar(self.oda, plan, self.p, "paprikakrydder", "har")
         self.assertIn("Paprikakrydder", [v["navn"] for v in lager.last()])
+
+
+def _treff(pid, navn, storrelse, pris, tilgjengelig=True):
+    return {"id": pid, "name": navn, "subtitle": storrelse, "price": pris, "availability": {"is_available": tilgjengelig, "code": "", "description": ""}}
+
+
+class TestBilligst(MedData):
+    def setUp(self):
+        super().setUp()
+        self.oda.produkter["kremfløte"] = [
+            _treff(901, "Q Kremfløte", "3 dl", 21.90),
+            _treff(902, "Laktosefri Kremfløte", "3 dl", 15.00),   # annen variant
+            _treff(903, "Kremfløte", "1 l", 49.90),               # billigere per liter, men dyrere for behovet
+            _treff(904, "Kremfløte", "3 dl", 9.90, False),        # utsolgt
+            _treff(906, "Kokoskremfløte", "3 dl", 8.00),          # annet sammensatt ord
+        ]
+
+    def test_bytter_til_rimeligste_likeverdige(self):
+        plan = planlegger.lag(self.oda, self.p, UKE, onsket=["3004"])
+        b = [b for b in plan["bytter"].values() if b["tittel"] == "Kremfløte"]
+        self.assertEqual(len(b), 1)
+        self.assertIn("Q Kremfløte", b[0]["til"])
+        self.assertAlmostEqual(b[0]["spart"] % 6.0, 0.0, places=1)  # 6 kr spart per kartong
+        liste = planlegger.handleliste_for(self.oda, plan, self.p)
+        self.assertIn(901, [x["produkt"]["id"] for x in liste["kjop"]])
+        self.assertNotIn(433, [x["produkt"]["id"] for x in liste["kjop"]])
+
+    def test_angre_bytte(self):
+        plan = planlegger.lag(self.oda, self.p, UKE, onsket=["3004"])
+        planlegger.original(self.oda, plan, self.p, "kremfløte")
+        planlegger.optimaliser_priser(self.oda, plan, self.p)  # skal ikke bytte tilbake
+        liste = planlegger.handleliste_for(self.oda, plan, self.p)
+        self.assertIn(433, [x["produkt"]["id"] for x in liste["kjop"]])
+
+    def test_allergi_stopper_bytte(self):
+        self.oda.produkter["kremfløte"] = [_treff(905, "Kremfløte med nøtter", "3 dl", 10.0)]
+        p = profil.sett("allergier", "nøtter")
+        plan = planlegger.lag(self.oda, p, UKE, onsket=["3004"])
+        self.assertFalse([b for b in plan["bytter"].values() if b["tittel"] == "Kremfløte"])
 
 
 class TestEgneOppskrifter(MedData):

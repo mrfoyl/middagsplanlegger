@@ -27,7 +27,13 @@ plan lag  →  plan vis  →  (avklar / bytt / dobbel / fri)  →  plan godkjenn
    dag, og resten spises på en aktivitetsdag. Er det 1–2 dager mellom, holder
    kjøleskapet. Ellers fryses resten. Ferdigmiddager som allerede ligger i
    fryseren, brukes først.
-5. Ingenting legges i kurven før planen er godkjent. Endrer du planen etter
+5. For hver vare søker den etter rimeligste likeverdige produkt
+   (`middagslib/billigst.py`). Den sammenligner hva ukens behov koster i hele
+   pakker, ikke bare kilopris. Den bytter bare når hovedordet stemmer, varen ikke
+   er en annen variant (røkt, saus, laktosefri, kylling- i stedet for vanlig …)
+   og ingen allergier treffes. Byttene vises i planen og kan angres med
+   `plan original <vare>`.
+6. Ingenting legges i kurven før planen er godkjent. Endrer du planen etter
    godkjenning, må den godkjennes på nytt. Samme plan kan ikke legges i
    kurven to ganger.
 

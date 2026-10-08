@@ -17,7 +17,7 @@ import hashlib
 import json
 import math
 
-from . import enheter, handleliste, lagring, matvarer, oppskrifter, profil as profilmod
+from . import billigst, enheter, handleliste, lagring, matvarer, oppskrifter, profil as profilmod
 from . import lager as lagermod
 from .oda import OdaFeil
 
@@ -333,9 +333,41 @@ def lag(oda, p: dict, uke: str, ekstra_aktivitet=(), kalenderdager=(), onsket=()
         "godkjent_hash": None,
         "advarsler": advarsler,
         "kurvlogg": [],
+        "bytter": {},
     }
     lagre(plan)
+    optimaliser_priser(oda, plan, p, logg)
     return plan
+
+
+# --- rimeligste alternativ ---
+
+def optimaliser_priser(oda, plan: dict, p: dict, logg=lambda *_: None) -> list:
+    """Bytt til rimeligste likeverdige produkt for varer vi ikke allerede har valgt produkt for."""
+    liste = handleliste_for(oda, plan, p)
+    hopp_over = set(plan.get("produktvalg", {})) | set(plan.get("behold_original", []))
+    nye = billigst.finn(oda, liste, p, hopp_over, logg)
+    if not nye:
+        return []
+    for nokkel, b in nye.items():
+        plan["produktvalg"][nokkel] = b["produkt"]
+        plan.setdefault("bytter", {})[nokkel] = {k: b[k] for k in ("tittel", "fra", "til", "spart")}
+    _endret(plan)
+    lagre(plan)
+    return list(nye.values())
+
+
+def original(oda, plan: dict, p: dict, vare: str) -> str:
+    """Angre et prisbytte: bruk produktet oppskriften selv peker på."""
+    for nokkel, b in plan.get("bytter", {}).items():
+        if lagermod.stamme(vare) in lagermod.stamme(b["tittel"]) or lagermod.stamme(b["tittel"]) in lagermod.stamme(vare):
+            plan["produktvalg"].pop(nokkel, None)
+            plan["bytter"].pop(nokkel)
+            plan.setdefault("behold_original", []).append(nokkel)
+            _endret(plan)
+            lagre(plan)
+            return b["fra"]
+    raise ValueError(f"Fant ikke noe prisbytte for '{vare}'.")
 
 
 # --- lagring og status ---
@@ -441,6 +473,7 @@ def bytt(oda, plan: dict, dag: str, ref: str) -> list:
         _sett_rett(d, r, plan["porsjoner"])
     _endret(plan)
     lagre(plan)
+    meldinger += [f"Rimeligere: {b['tittel']} → {b['til']} (sparer {b['spart']:.0f} kr)" for b in optimaliser_priser(oda, plan, profilmod.last())]
     return meldinger
 
 

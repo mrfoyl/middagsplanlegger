@@ -96,6 +96,7 @@ def beregn(retter, lagervarer, profil, avklaringer=None, produktvalg=None) -> di
             "produkt": produkt,
             "pakker_behov": round(pakker, 3),
             "behov": enheter.vis(behov_dim, behov_mengde) if behov_dim else None,
+            "behov_basis": [behov_dim, behov_mengde] if behov_dim else None,
         }
 
         valg = avklaringer.get(k)
