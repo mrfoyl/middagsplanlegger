@@ -11,6 +11,7 @@ Sikkerhet:
 import json
 import os
 import shlex
+import shutil
 import stat
 import subprocess
 from pathlib import Path
@@ -79,7 +80,10 @@ def _grunnkommando() -> list:
     cli = lagring.ROT / "vendor" / "mcp-oda" / "dist" / "index.js"
     if not cli.exists():
         raise OdaFeil(f"Finner ikke {cli}. Kjør scripts/setup_oda.sh først.")
-    return ["node", str(cli)]
+    if shutil.which("node"):
+        return ["node", str(cli)]
+    # Ingen Node på maskinen: kjør i container
+    return [str(lagring.ROT / "scripts" / "oda-podman.sh")]
 
 
 def _er_auth_feil(tekst: str) -> bool:
