@@ -115,7 +115,7 @@ def kurv_for(kp: dict) -> str:
     if kp["hoppet_over"]:
         linjer.append("*Hoppes over*: " + "; ".join(f"{x['tittel']} ({grunn})" for x, grunn in kp["hoppet_over"]))
     kurv = kp["kurv_for"]
-    linjer.append(f"Kurven har nå {kurv.get('product_quantity_count', len(kurv.get('items', [])))} varer for {_kr(kurv.get('total_gross_amount') or 0)}.")
+    linjer.append(f"Kurven har nå {kurv.get('product_quantity_count', len(kurv.get('items', [])))} varer for {_kr(kurv.get('display_price') or 0)}.")
     if any(l["allerede_i_kurv"] for l in kp["linjer"]):
         linjer.append("Noen varer ligger allerede i kurven. Si fra om jeg skal trekke dem fra (--trekk-fra-kurv).")
     linjer.append("Jeg bestiller aldri – du trykker «bestill» selv i Oda.")
@@ -130,7 +130,7 @@ def kurv_etter(res: dict) -> str:
     if res["hoppet_over"]:
         linjer.append("*Hoppet over*: " + "; ".join(f"{x['tittel']} ({grunn})" for x, grunn in res["hoppet_over"]))
     for navn, kurv in (("Før", res["kurv_for"]), ("Etter", res["kurv_etter"])):
-        linjer.append(f"{navn}: {kurv.get('product_quantity_count', '?')} varer, {_kr(kurv.get('total_gross_amount') or 0)}")
+        linjer.append(f"{navn}: {kurv.get('product_quantity_count', '?')} varer, {_kr(kurv.get('display_price') or 0)}")
     if res["feil"] and res["lagt"]:
         linjer.append("Kjør plan kurv --utfor igjen for å prøve de feilede på nytt (det som alt er lagt til, hoppes over).")
     elif res["feil"]:

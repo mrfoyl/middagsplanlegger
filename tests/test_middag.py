@@ -47,7 +47,7 @@ class FalskOda:
 
     def kurv(self):
         items = [{"id": k, "quantity": v} for k, v in self.kurv_innhold.items()]
-        return {"items": items, "product_quantity_count": sum(self.kurv_innhold.values()), "total_gross_amount": 0}
+        return {"items": items, "product_quantity_count": sum(self.kurv_innhold.values()), "display_price": 0}
 
     def sikre_innlogget(self):
         if not self.innlogget:
