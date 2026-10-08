@@ -1,0 +1,248 @@
+{
+ "id": 5038,
+ "name": "Sprø kylling med cæsarsalat",
+ "default_portions": 4,
+ "duration": "25 min",
+ "difficulty": "Lett",
+ "tags": [
+  {
+   "id": 25,
+   "title": "Kylling",
+   "group": "main_ingredient"
+  },
+  {
+   "id": 34,
+   "title": "Salat",
+   "group": "type"
+  },
+  {
+   "id": 65,
+   "title": "Middag",
+   "group": "meal"
+  }
+ ],
+ "url": "https://oda.com/no/recipes/5038-silje-feiring-spro-kylling-med-caesarsalat/",
+ "ingredients": [
+  {
+   "ingredient_id": 4089,
+   "title": "Kyllingfilet, stor",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 600,
+   "display_unit": "g",
+   "group": "Kylling",
+   "product": {
+    "id": 69581,
+    "name": "Saktevoksende kyllingfilet",
+    "full_name": "Eng Fugl Saktevoksende kyllingfilet",
+    "name_extra": "600 g",
+    "price": 101.4,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 92,
+   "title": "Kruspersille, fersk",
+   "is_basic": false,
+   "packages_per_portion": 0.188,
+   "display_quantity": 1,
+   "display_unit": "håndfull",
+   "group": "Salat",
+   "product": {
+    "id": 15160,
+    "name": "Fersk Kruspersille",
+    "full_name": "Fersk Kruspersille i Beger/pose, Nederland/ Italia",
+    "name_extra": "i Beger/pose, Nederland/ Italia, 20 g",
+    "price": 24.1,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 39,
+   "title": "Egg",
+   "is_basic": false,
+   "packages_per_portion": 0.05,
+   "display_quantity": 2,
+   "display_unit": "stk",
+   "group": "Kylling",
+   "product": {
+    "id": 68465,
+    "name": "Økologiske egg",
+    "full_name": "Kolonihagen Økologiske egg Str M/L/XL",
+    "name_extra": "Str M/L/XL, 10 stk",
+    "price": 75.1,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 28,
+   "title": "Parmesan, blokk",
+   "is_basic": false,
+   "packages_per_portion": 0.2,
+   "display_quantity": 100,
+   "display_unit": "g",
+   "group": "Salat",
+   "product": {
+    "id": 63604,
+    "name": "Parmigiano Reggiano Sticks",
+    "full_name": "Delivida Parmigiano Reggiano Sticks Lagret 12 mnd",
+    "name_extra": "Lagret 12 mnd, 125 g",
+    "price": 61.3,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 2289,
+   "title": "Cæsardressing",
+   "is_basic": false,
+   "packages_per_portion": 0.167,
+   "display_quantity": 200,
+   "display_unit": "ml",
+   "group": "Salat",
+   "product": {
+    "id": 41788,
+    "name": "Caesar Dressing",
+    "full_name": "Caj P Caesar Dressing",
+    "name_extra": "300 ml",
+    "price": 44.3,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 2946,
+   "title": "Romano salat",
+   "is_basic": false,
+   "packages_per_portion": 0.5,
+   "display_quantity": 2,
+   "display_unit": "stk",
+   "group": "Salat",
+   "product": {
+    "id": 26274,
+    "name": "Romano Grønn",
+    "full_name": "Huseby Gaard Romano Grønn Norge",
+    "name_extra": "Norge, 1 stk",
+    "price": 42.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 54,
+   "title": "Avokado, fersk",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 2,
+   "display_unit": "stk",
+   "group": "Salat",
+   "product": {
+    "id": 9452,
+    "name": "Avokado modnet",
+    "full_name": "Avokado modnet Colombia/ Peru/ Kenya",
+    "name_extra": "Maks 10 per kunde, Colombia/ Peru/ Kenya, 2 stk",
+    "price": 30,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 5946,
+   "title": "Panko",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 120,
+   "display_unit": "g",
+   "group": "Kylling",
+   "product": {
+    "id": 29321,
+    "name": "Panko Breadcrumbs",
+    "full_name": "Blue Dragon Panko Breadcrumbs",
+    "name_extra": "120 g",
+    "price": 65.4,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 3690,
+   "title": "Chiliflak",
+   "is_basic": false,
+   "packages_per_portion": 0.001,
+   "display_quantity": 1,
+   "display_unit": "ss",
+   "group": "Kylling",
+   "product": {
+    "id": 66279,
+    "name": "Chiliflak",
+    "full_name": "Helios Chiliflak Økologisk",
+    "name_extra": "Økologisk, 55 g",
+    "price": 80.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 1747,
+   "title": "Hvitløkspulver",
+   "is_basic": true,
+   "packages_per_portion": 0.014,
+   "display_quantity": 1,
+   "display_unit": "ts",
+   "group": "Kylling",
+   "product": {
+    "id": 6196,
+    "name": "Hvitløkspulver",
+    "full_name": "Toro Hvitløkspulver",
+    "name_extra": "87 g",
+    "price": 49.6,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 725,
+   "title": "Paprikakrydder",
+   "is_basic": true,
+   "packages_per_portion": 0.021,
+   "display_quantity": 1,
+   "display_unit": "ts",
+   "group": "Kylling",
+   "product": {
+    "id": 6094,
+    "name": "Paprika",
+    "full_name": "Toro Paprika Malt",
+    "name_extra": "Malt, 60 g",
+    "price": 45.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 30,
+   "title": "Salt, havsalt",
+   "is_basic": true,
+   "packages_per_portion": 0.004,
+   "display_quantity": 0.5,
+   "display_unit": "ts",
+   "group": "Kylling",
+   "product": {
+    "id": 563,
+    "name": "Rock Salt",
+    "full_name": "Santa Maria Rock Salt Med kvern",
+    "name_extra": "Med kvern, 140 g",
+    "price": 54.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 15,
+   "title": "Pepper, med kvern",
+   "is_basic": true,
+   "packages_per_portion": 0.01,
+   "display_quantity": 0.5,
+   "display_unit": "ts",
+   "group": "Kylling",
+   "product": {
+    "id": 6211,
+    "name": "Sort pepper hel",
+    "full_name": "Toro Sort pepper hel Med kvern",
+    "name_extra": "Med kvern, 65 g",
+    "price": 84.8,
+    "available": true
+   }
+  }
+ ]
+}

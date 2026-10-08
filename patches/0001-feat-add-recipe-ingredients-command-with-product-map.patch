@@ -1,0 +1,195 @@
+From 1cd6740b53d9e5d6b84c974013d5b178ce92d5b6 Mon Sep 17 00:00:00 2001
+From: Ole <mrfoyl@gmail.com>
+Date: Thu, 8 Oct 2026 21:11:30 +0200
+Subject: [PATCH] feat: add recipe ingredients command with product mapping
+
+Exposes Oda's per-ingredient product ID, packages per portion and
+pantry-staple flag so callers can merge ingredients across recipes.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ src/index.ts              |  9 +++++++
+ src/oda-client.ts         | 50 +++++++++++++++++++++++++++++++++++++++
+ src/server.ts             |  7 ++++++
+ src/types.ts              | 37 +++++++++++++++++++++++++++++
+ tests/integration.test.ts | 10 ++++++++
+ 5 files changed, 113 insertions(+)
+
+diff --git a/src/index.ts b/src/index.ts
+index 8fc43f0..14a11dc 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -167,6 +167,15 @@ recipeCmd
+     console.log(JSON.stringify(result, null, 2));
+   });
+ 
++recipeCmd
++  .command("ingredients <id>")
++  .description("Get recipe ingredients mapped to Oda products (JSON, for planning)")
++  .action(async (id: string) => {
++    const client = makeClient();
++    const result = await client.getRecipeIngredients(parseInt(id));
++    console.log(JSON.stringify(result, null, 2));
++  });
++
+ recipeCmd
+   .command("add <id>")
+   .description("Add recipe ingredients to cart")
+diff --git a/src/oda-client.ts b/src/oda-client.ts
+index 95b5ab6..d15a8ff 100644
+--- a/src/oda-client.ts
++++ b/src/oda-client.ts
+@@ -9,6 +9,7 @@ import {
+   RecipeFilter,
+   RecipePage,
+   RecipeDetail,
++  RecipeIngredients,
+   DeliverySlotsResponse,
+   ProductListSummary,
+   ProductListDetail,
+@@ -740,6 +741,55 @@ export class OdaClient {
+     return { name, description, ingredients, instructions, image_url: imageUrl };
+   }
+ 
++  async getRecipeIngredients(recipeId: number): Promise<RecipeIngredients> {
++    const data = await this.getRecipeData(recipeId);
++    return this.createRecipeIngredientsFromApi(data, recipeId);
++  }
++
++  private createRecipeIngredientsFromApi(data: any, recipeId: number): RecipeIngredients {
++    const display = new Map<number, any>();
++    for (const d of data.ingredientsDisplayList || []) display.set(d.id, d);
++
++    const ingredients = (data.ingredients || []).map((ing: any) => {
++      const d = display.get(ing.id) || {};
++      const p = ing.product;
++      return {
++        ingredient_id: ing.ingredient?.id ?? null,
++        title: ing.ingredient?.title || d.title || "",
++        is_basic: ing.isBasic === true,
++        packages_per_portion: parseFloat(ing.portionQuantity) || 0,
++        display_quantity: parseFloat(d.displayQuantity) || 0,
++        display_unit: d.displayUnit || ing.portionUnit?.abbreviation || "",
++        group: ing.groupHeading || "",
++        product: p?.id
++          ? {
++              id: p.id,
++              name: p.name || "",
++              full_name: p.fullName || "",
++              name_extra: p.nameExtra || "",
++              price: parseFloat(p.grossPrice) || 0,
++              available: p.availability?.isAvailable !== false,
++            }
++          : null,
++      };
++    });
++
++    return {
++      id: data.id ?? recipeId,
++      name: data.title || "Unknown",
++      default_portions: data.defaultNumPortions || 4,
++      duration: data.cookingDurationString || data.totalDurationString || "",
++      difficulty: data.difficultyString || "",
++      tags: (data.tags || []).map((t: any) => ({
++        id: t.id,
++        title: t.title || "",
++        group: t.groupKey ?? null,
++      })),
++      url: data.frontUrl || `${OdaClient.BASE_URL}/recipes/${recipeId}/`,
++      ingredients,
++    };
++  }
++
+   async addRecipeToCart(
+     recipeId: number,
+     portions: number,
+diff --git a/src/server.ts b/src/server.ts
+index 2fa8fe8..123428f 100644
+--- a/src/server.ts
++++ b/src/server.ts
+@@ -125,6 +125,13 @@ export class OdaServer {
+       return this.jsonResult(await this.getClient().getRecipeDetails(id));
+     }));
+ 
++    this.mcpServer.registerTool("recipes_get_ingredients", {
++      description: "Get a recipe's ingredients mapped to Oda products, with packages per portion and pantry-staple flags.",
++      inputSchema: { id: z.number().int().positive() },
++    }, this.toolHandler("recipes_get_ingredients", async ({ id }) => {
++      return this.jsonResult(await this.getClient().getRecipeIngredients(id));
++    }));
++
+     this.mcpServer.registerTool("recipe_add_to_cart", {
+       description: "Add recipe ingredients to cart by recipe ID.",
+       inputSchema: { id: z.number().int().positive(), portions: z.number().int().positive() },
+diff --git a/src/types.ts b/src/types.ts
+index da3b367..6a7c31f 100644
+--- a/src/types.ts
++++ b/src/types.ts
+@@ -71,6 +71,43 @@ export interface RecipePage {
+   has_more: boolean;
+ }
+ 
++export interface RecipeIngredientProduct {
++  id: number;
++  name: string;
++  full_name: string;
++  name_extra: string;
++  price: number;
++  available: boolean;
++}
++
++/** One ingredient line with the Oda product it maps to. */
++export interface RecipeIngredient {
++  /** Oda's canonical ingredient ID (e.g. 50 = "Gul løk"), shared across recipes. */
++  ingredient_id: number | null;
++  title: string;
++  /** Oda marks pantry staples (salt, oil, spices) as "basic". */
++  is_basic: boolean;
++  /** Product packages needed per portion — what Oda itself multiplies by portions for the cart. */
++  packages_per_portion: number;
++  /** Human quantity for the recipe's default portions, e.g. 400 g. */
++  display_quantity: number;
++  display_unit: string;
++  group: string;
++  product: RecipeIngredientProduct | null;
++}
++
++/** Machine-readable recipe: product-mapped ingredients for planning across recipes. */
++export interface RecipeIngredients {
++  id: number;
++  name: string;
++  default_portions: number;
++  duration: string;
++  difficulty: string;
++  tags: { id: number; title: string; group: string | null }[];
++  url: string;
++  ingredients: RecipeIngredient[];
++}
++
+ export interface RecipeDetail {
+   name: string;
+   description: string;
+diff --git a/tests/integration.test.ts b/tests/integration.test.ts
+index 735fe3c..2baea9d 100644
+--- a/tests/integration.test.ts
++++ b/tests/integration.test.ts
+@@ -69,6 +69,16 @@ describe("Oda Integration Tests", () => {
+     expect(details.instructions.length).toBeGreaterThan(0);
+   }, 30000);
+ 
++  it("should get recipe ingredients mapped to products", async () => {
++    const results = await client.searchRecipes("pizza");
++    const recipe = await client.getRecipeIngredients(results.items[0].id);
++    expect(recipe.default_portions).toBeGreaterThan(0);
++    expect(recipe.ingredients.length).toBeGreaterThan(0);
++    const mapped = recipe.ingredients.filter((i) => i.product);
++    expect(mapped.length).toBeGreaterThan(0);
++    expect(mapped[0].packages_per_portion).toBeGreaterThan(0);
++  }, 30000);
++
+   it("should support recipe pagination", async () => {
+     const firstPage = await client.searchRecipes("kylling");
+     expect(firstPage.items.length).toBeGreaterThan(0);
+-- 
+2.55.0
+

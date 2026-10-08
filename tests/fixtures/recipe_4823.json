@@ -1,0 +1,168 @@
+{
+ "id": 4823,
+ "name": "BBQ-laks med mango- og avokadosalsa",
+ "default_portions": 4,
+ "duration": "20 min",
+ "difficulty": "Lett",
+ "tags": [
+  {
+   "id": 17,
+   "title": "Fisk",
+   "group": "main_ingredient"
+  },
+  {
+   "id": 55,
+   "title": "Raske middager",
+   "group": null
+  },
+  {
+   "id": 65,
+   "title": "Middag",
+   "group": "meal"
+  },
+  {
+   "id": 259,
+   "title": "Laks",
+   "group": "main_ingredient"
+  }
+ ],
+ "url": "https://oda.com/no/recipes/4823-silje-feiring-bbq-laks-med-mango-og-avokadosalsa/",
+ "ingredients": [
+  {
+   "ingredient_id": 163,
+   "title": "Rødløk",
+   "is_basic": false,
+   "packages_per_portion": 0.033,
+   "display_quantity": 0.5,
+   "display_unit": "stk",
+   "group": "Mango og avokadosalsa",
+   "product": {
+    "id": 9221,
+    "name": "Rødløk Strømpe",
+    "full_name": "Rødløk Strømpe 2/3 stk Norge",
+    "name_extra": "2/3 stk Norge, 375 g",
+    "price": 28.8,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 2,
+   "title": "Lime",
+   "is_basic": false,
+   "packages_per_portion": 0.083,
+   "display_quantity": 1,
+   "display_unit": "stk",
+   "group": "Mango og avokadosalsa",
+   "product": {
+    "id": 27622,
+    "name": "Store Lime",
+    "full_name": "Store Lime Brasil / Colombia",
+    "name_extra": "Brasil / Colombia, 3 stk",
+    "price": 43.4,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 3805,
+   "title": "Fersk laksefilet, uten skinn",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 500,
+   "display_unit": "g",
+   "group": "Laks og ris",
+   "product": {
+    "id": 27246,
+    "name": "Laksefilet uten skinn",
+    "full_name": "Norsk Sjømat AS Laksefilet uten skinn Naturell",
+    "name_extra": "Naturell, 500 g",
+    "price": 129,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 1849,
+   "title": "BBQ-saus",
+   "is_basic": false,
+   "packages_per_portion": 0.003,
+   "display_quantity": 4,
+   "display_unit": "ss",
+   "group": "Laks og ris",
+   "product": {
+    "id": 64939,
+    "name": "Sweet Baby Ray's BBQ Sauce",
+    "full_name": "Sweet Baby Ray's BBQ Sauce",
+    "name_extra": "510 g",
+    "price": 63,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 406,
+   "title": "Basmatiris",
+   "is_basic": false,
+   "packages_per_portion": 0.075,
+   "display_quantity": 300,
+   "display_unit": "g",
+   "group": "Laks og ris",
+   "product": {
+    "id": 67913,
+    "name": "Basmatiris",
+    "full_name": "R Basmatiris",
+    "name_extra": "1 kg",
+    "price": 36.8,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 160,
+   "title": "Mango",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 1,
+   "display_unit": "stk",
+   "group": "Mango og avokadosalsa",
+   "product": {
+    "id": 18964,
+    "name": "Ekstra Stor Mango",
+    "full_name": "Ekstra Stor Mango Moden, Elfenbenskysten / Brasil",
+    "name_extra": "Moden, Elfenbenskysten / Brasil, 1 stk",
+    "price": 36.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 54,
+   "title": "Avokado, fersk",
+   "is_basic": false,
+   "packages_per_portion": 0.125,
+   "display_quantity": 1,
+   "display_unit": "stk",
+   "group": "Mango og avokadosalsa",
+   "product": {
+    "id": 9452,
+    "name": "Avokado modnet",
+    "full_name": "Avokado modnet Colombia/ Peru/ Kenya",
+    "name_extra": "Maks 10 per kunde, Colombia/ Peru/ Kenya, 2 stk",
+    "price": 30,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 81,
+   "title": "Koriander, frisk",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 1,
+   "display_unit": "stk",
+   "group": "Mango og avokadosalsa",
+   "product": {
+    "id": 15163,
+    "name": "Fersk Koriander",
+    "full_name": "Fersk Koriander i Pose, Etiopia/ Kenya",
+    "name_extra": "i Pose, Etiopia/ Kenya, 20 g",
+    "price": 24.9,
+    "available": true
+   }
+  }
+ ]
+}

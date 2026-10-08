@@ -1,0 +1,144 @@
+{
+ "id": 4210,
+ "name": "Rask kremet kokoscurry med laks ",
+ "default_portions": 4,
+ "duration": "20 min",
+ "difficulty": "Lett",
+ "tags": [
+  {
+   "id": 7,
+   "title": "Thai",
+   "group": "kitchen"
+  },
+  {
+   "id": 17,
+   "title": "Fisk",
+   "group": "main_ingredient"
+  },
+  {
+   "id": 259,
+   "title": "Laks",
+   "group": "main_ingredient"
+  },
+  {
+   "id": 249,
+   "title": "Asiatisk",
+   "group": "kitchen"
+  },
+  {
+   "id": 65,
+   "title": "Middag",
+   "group": "meal"
+  },
+  {
+   "id": 55,
+   "title": "Raske middager",
+   "group": null
+  }
+ ],
+ "url": "https://oda.com/no/recipes/4210-silje-feiring-rask-kremet-kokoscurry-med-laks/",
+ "ingredients": [
+  {
+   "ingredient_id": 103,
+   "title": "Sitroner, økologisk",
+   "is_basic": false,
+   "packages_per_portion": 0.031,
+   "display_quantity": 0.25,
+   "display_unit": "stk",
+   "group": "Kremet kokoscurry med laks ",
+   "product": {
+    "id": 23921,
+    "name": "Økologiske Sitroner",
+    "full_name": "Økologiske Sitroner Spania / Sør Afrika",
+    "name_extra": "Spania / Sør Afrika, 2 stk",
+    "price": 30.8,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 4514,
+   "title": "Ris, porsjonspose",
+   "is_basic": false,
+   "packages_per_portion": 0.062,
+   "display_quantity": 250,
+   "display_unit": "g",
+   "group": "Kremet kokoscurry med laks ",
+   "product": {
+    "id": 13327,
+    "name": "Basmatiris",
+    "full_name": "R Basmatiris Boil-in-bag",
+    "name_extra": "Boil-in-bag, 1 kg",
+    "price": 58.1,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 1552,
+   "title": "Basilikum, fersk",
+   "is_basic": false,
+   "packages_per_portion": 0.188,
+   "display_quantity": 1,
+   "display_unit": "håndfull",
+   "group": "Kremet kokoscurry med laks ",
+   "product": {
+    "id": 15157,
+    "name": "Fersk basilikum",
+    "full_name": "Fersk basilikum i Pose, Etiopia/ Kenya",
+    "name_extra": "i Pose, Etiopia/ Kenya, 20 g",
+    "price": 24.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 181,
+   "title": "Kokosmelk",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 400,
+   "display_unit": "ml",
+   "group": "Kremet kokoscurry med laks ",
+   "product": {
+    "id": 8578,
+    "name": "Kokosmelk",
+    "full_name": "R Kokosmelk",
+    "name_extra": "400 ml",
+    "price": 26.7,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 196,
+   "title": "Currypaste, rød",
+   "is_basic": false,
+   "packages_per_portion": 0.068,
+   "display_quantity": 2,
+   "display_unit": "ss",
+   "group": "Kremet kokoscurry med laks ",
+   "product": {
+    "id": 30238,
+    "name": "Red Curry Paste",
+    "full_name": "Santa Maria Red Curry Paste",
+    "name_extra": "110 g",
+    "price": 31,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 3805,
+   "title": "Fersk laksefilet, uten skinn",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 500,
+   "display_unit": "g",
+   "group": "Kremet kokoscurry med laks ",
+   "product": {
+    "id": 27246,
+    "name": "Laksefilet uten skinn",
+    "full_name": "Norsk Sjømat AS Laksefilet uten skinn Naturell",
+    "name_extra": "Naturell, 500 g",
+    "price": 129,
+    "available": true
+   }
+  }
+ ]
+}

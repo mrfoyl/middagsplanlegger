@@ -1,0 +1,251 @@
+{
+ "id": 2630,
+ "name": "Thai grønnsaksuppe med glassnudler",
+ "default_portions": 4,
+ "duration": "25 min",
+ "difficulty": "Lett",
+ "tags": [
+  {
+   "id": 7,
+   "title": "Thai",
+   "group": "kitchen"
+  },
+  {
+   "id": 16,
+   "title": "Supper",
+   "group": "type"
+  },
+  {
+   "id": 43,
+   "title": "Vegetar",
+   "group": "diet"
+  },
+  {
+   "id": 249,
+   "title": "Asiatisk",
+   "group": "kitchen"
+  },
+  {
+   "id": 65,
+   "title": "Middag",
+   "group": "meal"
+  },
+  {
+   "id": 114,
+   "title": "Klimavennlig",
+   "group": null
+  },
+  {
+   "id": 26,
+   "title": "Sunt",
+   "group": "diet"
+  }
+ ],
+ "url": "https://oda.com/no/recipes/2630-marit-marvik-thai-gronnsaksuppe-med-glassnudler/",
+ "ingredients": [
+  {
+   "ingredient_id": 181,
+   "title": "Kokosmelk",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 4,
+   "display_unit": "dl",
+   "group": "",
+   "product": {
+    "id": 8578,
+    "name": "Kokosmelk",
+    "full_name": "R Kokosmelk",
+    "name_extra": "400 ml",
+    "price": 26.7,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 427,
+   "title": "Linser, røde, tørkede",
+   "is_basic": false,
+   "packages_per_portion": 0.05,
+   "display_quantity": 180,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 67920,
+    "name": "Tørkede røde linser, hele",
+    "full_name": "SEVAN Tørkede røde linser, hele",
+    "name_extra": "900 g",
+    "price": 44.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 22,
+   "title": "Gulrøtter",
+   "is_basic": false,
+   "packages_per_portion": 0.067,
+   "display_quantity": 3,
+   "display_unit": "stk",
+   "group": "",
+   "product": {
+    "id": 26976,
+    "name": "Økologiske Gulrøtter",
+    "full_name": "Økologiske Gulrøtter Norge",
+    "name_extra": "Norge, 750 g",
+    "price": 46.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 3408,
+   "title": "Glassnudler",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 100,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 26877,
+    "name": "Glassnudler",
+    "full_name": "Go-Tan Glassnudler",
+    "name_extra": "100 g",
+    "price": 39.8,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 577,
+   "title": "Søtpotet",
+   "is_basic": false,
+   "packages_per_portion": 0.3,
+   "display_quantity": 300,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 9299,
+    "name": "Stor Søtpotet",
+    "full_name": "Stor Søtpotet Egypt / Honduras",
+    "name_extra": "Egypt / Honduras, 1 stk",
+    "price": 23,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 553,
+   "title": "Vårløk",
+   "is_basic": false,
+   "packages_per_portion": 0.067,
+   "display_quantity": 2,
+   "display_unit": "stk",
+   "group": "",
+   "product": {
+    "id": 9398,
+    "name": "Vårløk i Bunt",
+    "full_name": "Vårløk i Bunt Norge",
+    "name_extra": "Norge, 150 g",
+    "price": 35.2,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 56,
+   "title": "Brokkoli, fersk",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 1,
+   "display_unit": "stk",
+   "group": "",
+   "product": {
+    "id": 61999,
+    "name": "Brokkoli",
+    "full_name": "Huseby Gaard Brokkoli Norge",
+    "name_extra": "Norge, 1 stk",
+    "price": 34.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 829,
+   "title": "Persillerot",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 1,
+   "display_unit": "stk",
+   "group": "",
+   "product": {
+    "id": 9377,
+    "name": "Persillerot",
+    "full_name": "Persillerot Norge",
+    "name_extra": "Norge, 200 g",
+    "price": 33.4,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 4,
+   "title": "Paprika, rød",
+   "is_basic": false,
+   "packages_per_portion": 0.125,
+   "display_quantity": 1,
+   "display_unit": "stk",
+   "group": "",
+   "product": {
+    "id": 27626,
+    "name": "Stor Paprika Rød 2/3 stk",
+    "full_name": "Stor Paprika Rød 2/3 stk Nederland / Spania",
+    "name_extra": "Nederland / Spania, 2 stk",
+    "price": 27.5,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 3374,
+   "title": "Thai suppe, miks",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 1,
+   "display_unit": "pk",
+   "group": "",
+   "product": {
+    "id": 68767,
+    "name": "Thaisuppe Red curry",
+    "full_name": "Toro Thaisuppe Red curry",
+    "name_extra": "118 g",
+    "price": 32.7,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 2,
+   "title": "Lime",
+   "is_basic": false,
+   "packages_per_portion": 0.083,
+   "display_quantity": 1,
+   "display_unit": "stk",
+   "group": "",
+   "product": {
+    "id": 27622,
+    "name": "Store Lime",
+    "full_name": "Store Lime Brasil / Colombia",
+    "name_extra": "Brasil / Colombia, 3 stk",
+    "price": 43.4,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 538,
+   "title": "Cashewnøtter",
+   "is_basic": false,
+   "packages_per_portion": 0.079,
+   "display_quantity": 55,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 8590,
+    "name": "Cashewnøtter",
+    "full_name": "R Cashewnøtter",
+    "name_extra": "175 g",
+    "price": 34.8,
+    "available": true
+   }
+  }
+ ]
+}

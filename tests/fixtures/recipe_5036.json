@@ -1,0 +1,248 @@
+{
+ "id": 5036,
+ "name": "Laks med kremet sitronpasta",
+ "default_portions": 4,
+ "duration": "20 min",
+ "difficulty": "Lett",
+ "tags": [
+  {
+   "id": 19,
+   "title": "Pasta",
+   "group": "type"
+  },
+  {
+   "id": 65,
+   "title": "Middag",
+   "group": "meal"
+  },
+  {
+   "id": 259,
+   "title": "Laks",
+   "group": "main_ingredient"
+  }
+ ],
+ "url": "https://oda.com/no/recipes/5036-silje-feiring-laks-med-kremet-sitronpasta/",
+ "ingredients": [
+  {
+   "ingredient_id": 134,
+   "title": "Fersk laksefilet",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 500,
+   "display_unit": "g",
+   "group": "Laks ",
+   "product": {
+    "id": 69529,
+    "name": "Lakseporsjoner 4x125g",
+    "full_name": "Vår Laveste Pris Lakseporsjoner 4x125g Uten skinn",
+    "name_extra": "Uten skinn, 500 g",
+    "price": 123,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 95,
+   "title": "Oregano, tørket",
+   "is_basic": false,
+   "packages_per_portion": 0.208,
+   "display_quantity": 1,
+   "display_unit": "ts",
+   "group": "Laks ",
+   "product": {
+    "id": 29677,
+    "name": "Soltørket oregano",
+    "full_name": "Helios Soltørket oregano Økologisk",
+    "name_extra": "Økologisk, 6 g",
+    "price": 29.8,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 28,
+   "title": "Parmesan, blokk",
+   "is_basic": false,
+   "packages_per_portion": 0.2,
+   "display_quantity": 100,
+   "display_unit": "g",
+   "group": "Kremet sitronpasta",
+   "product": {
+    "id": 63604,
+    "name": "Parmigiano Reggiano Sticks",
+    "full_name": "Delivida Parmigiano Reggiano Sticks Lagret 12 mnd",
+    "name_extra": "Lagret 12 mnd, 125 g",
+    "price": 61.3,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 92,
+   "title": "Kruspersille, fersk",
+   "is_basic": false,
+   "packages_per_portion": 0.188,
+   "display_quantity": 1,
+   "display_unit": "håndfull",
+   "group": "Kremet sitronpasta",
+   "product": {
+    "id": 15160,
+    "name": "Fersk Kruspersille",
+    "full_name": "Fersk Kruspersille i Beger/pose, Nederland/ Italia",
+    "name_extra": "i Beger/pose, Nederland/ Italia, 20 g",
+    "price": 24.1,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 4699,
+   "title": "Pasta, linguine",
+   "is_basic": false,
+   "packages_per_portion": 0.2,
+   "display_quantity": 400,
+   "display_unit": "g",
+   "group": "Kremet sitronpasta",
+   "product": {
+    "id": 66262,
+    "name": "Linguine Al Bronzo",
+    "full_name": "Barilla Linguine Al Bronzo",
+    "name_extra": "500 g",
+    "price": 29.8,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 286,
+   "title": "Kremfløte",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 3,
+   "display_unit": "dl",
+   "group": "Kremet sitronpasta",
+   "product": {
+    "id": 433,
+    "name": "Kremfløte",
+    "full_name": "TINE Kremfløte",
+    "name_extra": "3 dl",
+    "price": 27.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 5690,
+   "title": "Sitroner",
+   "is_basic": false,
+   "packages_per_portion": 0.038,
+   "display_quantity": 0.5,
+   "display_unit": "stk",
+   "group": "Kremet sitronpasta",
+   "product": {
+    "id": 27248,
+    "name": "Sitroner 2 stk",
+    "full_name": "Sitroner 2 stk Sør Afrika / Argentina",
+    "name_extra": "Maks 10 per kunde, Sør Afrika / Argentina, 400 g",
+    "price": 20,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 725,
+   "title": "Paprikakrydder",
+   "is_basic": true,
+   "packages_per_portion": 0.021,
+   "display_quantity": 1,
+   "display_unit": "ts",
+   "group": "Laks ",
+   "product": {
+    "id": 6094,
+    "name": "Paprika",
+    "full_name": "Toro Paprika Malt",
+    "name_extra": "Malt, 60 g",
+    "price": 45.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 1747,
+   "title": "Hvitløkspulver",
+   "is_basic": true,
+   "packages_per_portion": 0.014,
+   "display_quantity": 1,
+   "display_unit": "ts",
+   "group": "Laks ",
+   "product": {
+    "id": 6196,
+    "name": "Hvitløkspulver",
+    "full_name": "Toro Hvitløkspulver",
+    "name_extra": "87 g",
+    "price": 49.6,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 30,
+   "title": "Salt, havsalt",
+   "is_basic": true,
+   "packages_per_portion": 0.018,
+   "display_quantity": 1,
+   "display_unit": "klype",
+   "group": "Kremet sitronpasta",
+   "product": {
+    "id": 563,
+    "name": "Rock Salt",
+    "full_name": "Santa Maria Rock Salt Med kvern",
+    "name_extra": "Med kvern, 140 g",
+    "price": 54.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 3436,
+   "title": "Pepper, grovmalt",
+   "is_basic": true,
+   "packages_per_portion": 0.038,
+   "display_quantity": 1,
+   "display_unit": "klype",
+   "group": "Kremet sitronpasta",
+   "product": {
+    "id": 6211,
+    "name": "Sort pepper hel",
+    "full_name": "Toro Sort pepper hel Med kvern",
+    "name_extra": "Med kvern, 65 g",
+    "price": 84.8,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 12,
+   "title": "Hvitløk, fersk",
+   "is_basic": true,
+   "packages_per_portion": 0.012,
+   "display_quantity": 2,
+   "display_unit": "fedd",
+   "group": "Kremet sitronpasta",
+   "product": {
+    "id": 9371,
+    "name": "Hvitløk",
+    "full_name": "Hvitløk 2-3pk, Kina/Spania",
+    "name_extra": "2-3pk, Kina/Spania, 100 g",
+    "price": 12.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 4019,
+   "title": "Meierismør",
+   "is_basic": true,
+   "packages_per_portion": 0.015,
+   "display_quantity": 2,
+   "display_unit": "ss",
+   "group": "Kremet sitronpasta",
+   "product": {
+    "id": 130,
+    "name": "Ekte meierismør",
+    "full_name": "TINE Ekte meierismør",
+    "name_extra": "500 g",
+    "price": 61.4,
+    "available": true
+   }
+  }
+ ]
+}

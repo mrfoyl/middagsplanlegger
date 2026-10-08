@@ -1,0 +1,226 @@
+{
+ "id": 5049,
+ "name": "Kremet grønnsaksgryte med kylling og bacon",
+ "default_portions": 4,
+ "duration": "25 min",
+ "difficulty": "Lett",
+ "tags": [
+  {
+   "id": 25,
+   "title": "Kylling",
+   "group": "main_ingredient"
+  },
+  {
+   "id": 65,
+   "title": "Middag",
+   "group": "meal"
+  }
+ ],
+ "url": "https://oda.com/no/recipes/5049-silje-feiring-kremet-gronnsaksgryte-med-kylling-og-bacon/",
+ "ingredients": [
+  {
+   "ingredient_id": 4122,
+   "title": "Steinovnsbakt brød",
+   "is_basic": false,
+   "packages_per_portion": 0.071,
+   "display_quantity": 0.25,
+   "display_unit": "stk",
+   "group": "",
+   "product": {
+    "id": 27464,
+    "name": "Steinovnsbakt grovbrød",
+    "full_name": "Korn Bakeri Steinovnsbakt grovbrød",
+    "name_extra": "620 g",
+    "price": 55.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 1977,
+   "title": "Bladpersille",
+   "is_basic": false,
+   "packages_per_portion": 0.188,
+   "display_quantity": 1,
+   "display_unit": "håndfull",
+   "group": "",
+   "product": {
+    "id": 17767,
+    "name": "Fersk Bladpersille",
+    "full_name": "Fersk Bladpersille i Pose, Etiopia / Kenya",
+    "name_extra": "i Pose, Etiopia / Kenya, 20 g",
+    "price": 21.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 4089,
+   "title": "Kyllingfilet, stor",
+   "is_basic": false,
+   "packages_per_portion": 0.208,
+   "display_quantity": 500,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 69581,
+    "name": "Saktevoksende kyllingfilet",
+    "full_name": "Eng Fugl Saktevoksende kyllingfilet",
+    "name_extra": "600 g",
+    "price": 101.4,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 4021,
+   "title": "Skogsbacon",
+   "is_basic": false,
+   "packages_per_portion": 0.188,
+   "display_quantity": 105,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 36515,
+    "name": "Stjernebacon",
+    "full_name": "Gilde Stjernebacon",
+    "name_extra": "140 g",
+    "price": 39.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 6082,
+   "title": "Nordisk suppe- og grytebase",
+   "is_basic": false,
+   "packages_per_portion": 0.417,
+   "display_quantity": 500,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 68586,
+    "name": "KUTTA Nordisk suppe- og grytebase",
+    "full_name": "Huseby Gaard KUTTA Nordisk suppe- og grytebase Gulrot, kålrot og pastinakk",
+    "name_extra": "Gulrot, kålrot og pastinakk, 300 g",
+    "price": 32.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 5997,
+   "title": "Kyllingkraft",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 500,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 33260,
+    "name": "Klar kyllingkraft",
+    "full_name": "Maggi Klar kyllingkraft",
+    "name_extra": "500 ml",
+    "price": 56,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 286,
+   "title": "Kremfløte",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 3,
+   "display_unit": "dl",
+   "group": "",
+   "product": {
+    "id": 433,
+    "name": "Kremfløte",
+    "full_name": "TINE Kremfløte",
+    "name_extra": "3 dl",
+    "price": 27.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 28,
+   "title": "Parmesan, blokk",
+   "is_basic": false,
+   "packages_per_portion": 0.2,
+   "display_quantity": 100,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 63604,
+    "name": "Parmigiano Reggiano Sticks",
+    "full_name": "Delivida Parmigiano Reggiano Sticks Lagret 12 mnd",
+    "name_extra": "Lagret 12 mnd, 125 g",
+    "price": 61.3,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 30,
+   "title": "Salt, havsalt",
+   "is_basic": true,
+   "packages_per_portion": 0.009,
+   "display_quantity": 1,
+   "display_unit": "klype",
+   "group": "",
+   "product": {
+    "id": 563,
+    "name": "Rock Salt",
+    "full_name": "Santa Maria Rock Salt Med kvern",
+    "name_extra": "Med kvern, 140 g",
+    "price": 54.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 15,
+   "title": "Pepper, med kvern",
+   "is_basic": true,
+   "packages_per_portion": 0.019,
+   "display_quantity": 1,
+   "display_unit": "klype",
+   "group": "",
+   "product": {
+    "id": 6211,
+    "name": "Sort pepper hel",
+    "full_name": "Toro Sort pepper hel Med kvern",
+    "name_extra": "Med kvern, 65 g",
+    "price": 84.8,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 725,
+   "title": "Paprikakrydder",
+   "is_basic": true,
+   "packages_per_portion": 0.021,
+   "display_quantity": 1,
+   "display_unit": "ts",
+   "group": "",
+   "product": {
+    "id": 6094,
+    "name": "Paprika",
+    "full_name": "Toro Paprika Malt",
+    "name_extra": "Malt, 60 g",
+    "price": 45.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 4019,
+   "title": "Meierismør",
+   "is_basic": true,
+   "packages_per_portion": 0.003,
+   "display_quantity": 4,
+   "display_unit": "ss",
+   "group": "",
+   "product": {
+    "id": 130,
+    "name": "Ekte meierismør",
+    "full_name": "TINE Ekte meierismør",
+    "name_extra": "500 g",
+    "price": 61.4,
+    "available": true
+   }
+  }
+ ]
+}

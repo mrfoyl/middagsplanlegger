@@ -1,0 +1,9 @@
+# Lokale data (profil, lager, planer, cache) – personlig, ikke i git
+data/
+# Forken klones og patches av scripts/setup_oda.sh
+vendor/
+__pycache__/
+*.pyc
+# Legitimasjon skal aldri ligge her, men for sikkerhets skyld
+*.env
+.env*

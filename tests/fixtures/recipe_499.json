@@ -1,0 +1,180 @@
+{
+ "id": 499,
+ "name": "Suppe med søtpotet & bacon",
+ "default_portions": 5,
+ "duration": "1 t",
+ "difficulty": "Lett",
+ "tags": [
+  {
+   "id": 16,
+   "title": "Supper",
+   "group": "type"
+  },
+  {
+   "id": 38,
+   "title": "Bacon",
+   "group": "main_ingredient"
+  },
+  {
+   "id": 65,
+   "title": "Middag",
+   "group": "meal"
+  }
+ ],
+ "url": "https://oda.com/no/recipes/499-rundt-bordet-suppe-med-sotpotet-bacon/",
+ "ingredients": [
+  {
+   "ingredient_id": 70,
+   "title": "Sjalottløk",
+   "is_basic": false,
+   "packages_per_portion": 0.057,
+   "display_quantity": 100,
+   "display_unit": "g",
+   "group": "Suppe med søtpotet & bacon",
+   "product": {
+    "id": 9218,
+    "name": "Sjalottløk",
+    "full_name": "Sjalottløk I nett, Nederland",
+    "name_extra": "I nett, Nederland, 350 g",
+    "price": 28.8,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 16,
+   "title": "Matfløte",
+   "is_basic": false,
+   "packages_per_portion": 0.333,
+   "display_quantity": 5,
+   "display_unit": "dl",
+   "group": "Suppe med søtpotet & bacon",
+   "product": {
+    "id": 221,
+    "name": "Matfløte",
+    "full_name": "TINE Matfløte 18%",
+    "name_extra": "18%, 0,3 l",
+    "price": 22.6,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 577,
+   "title": "Søtpotet",
+   "is_basic": false,
+   "packages_per_portion": 0.16,
+   "display_quantity": 200,
+   "display_unit": "g",
+   "group": "Suppe med søtpotet & bacon",
+   "product": {
+    "id": 9299,
+    "name": "Stor Søtpotet",
+    "full_name": "Stor Søtpotet Egypt / Honduras",
+    "name_extra": "Egypt / Honduras, 1 stk",
+    "price": 23,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 63,
+   "title": "Kålrot",
+   "is_basic": false,
+   "packages_per_portion": 0.2,
+   "display_quantity": 500,
+   "display_unit": "g",
+   "group": "Suppe med søtpotet & bacon",
+   "product": {
+    "id": 19456,
+    "name": "Økologisk Kålrot",
+    "full_name": "Økologisk Kålrot Norge",
+    "name_extra": "Norge, 1 stk",
+    "price": 42.6,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 22,
+   "title": "Gulrøtter",
+   "is_basic": false,
+   "packages_per_portion": 0.133,
+   "display_quantity": 500,
+   "display_unit": "g",
+   "group": "Suppe med søtpotet & bacon",
+   "product": {
+    "id": 26976,
+    "name": "Økologiske Gulrøtter",
+    "full_name": "Økologiske Gulrøtter Norge",
+    "name_extra": "Norge, 750 g",
+    "price": 46.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 1072,
+   "title": "Bacon, skivet",
+   "is_basic": false,
+   "packages_per_portion": 0.381,
+   "display_quantity": 200,
+   "display_unit": "g",
+   "group": "Suppe med søtpotet & bacon",
+   "product": {
+    "id": 24236,
+    "name": "Stjernebacon",
+    "full_name": "Gilde Stjernebacon tørrsaltet",
+    "name_extra": "tørrsaltet, 105 g",
+    "price": 40.3,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 30,
+   "title": "Salt, havsalt",
+   "is_basic": true,
+   "packages_per_portion": 0.007,
+   "display_quantity": 1,
+   "display_unit": "ts",
+   "group": "Suppe med søtpotet & bacon",
+   "product": {
+    "id": 563,
+    "name": "Rock Salt",
+    "full_name": "Santa Maria Rock Salt Med kvern",
+    "name_extra": "Med kvern, 140 g",
+    "price": 54.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 2026,
+   "title": "Margarin, blokk",
+   "is_basic": true,
+   "packages_per_portion": 0.012,
+   "display_quantity": 2,
+   "display_unit": "ss",
+   "group": "Suppe med søtpotet & bacon",
+   "product": {
+    "id": 1741,
+    "name": "Melange margarin",
+    "full_name": "Melange margarin",
+    "name_extra": "500 g",
+    "price": 36.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 15,
+   "title": "Pepper, med kvern",
+   "is_basic": true,
+   "packages_per_portion": 0.015,
+   "display_quantity": 1,
+   "display_unit": "ts",
+   "group": "Suppe med søtpotet & bacon",
+   "product": {
+    "id": 6211,
+    "name": "Sort pepper hel",
+    "full_name": "Toro Sort pepper hel Med kvern",
+    "name_extra": "Med kvern, 65 g",
+    "price": 84.8,
+    "available": true
+   }
+  }
+ ]
+}

@@ -1,0 +1,236 @@
+{
+ "id": 1924,
+ "name": "Pasta med scampi",
+ "default_portions": 4,
+ "duration": "20 min",
+ "difficulty": "Lett",
+ "tags": [
+  {
+   "id": 18,
+   "title": "Sjømat",
+   "group": "main_ingredient"
+  },
+  {
+   "id": 19,
+   "title": "Pasta",
+   "group": "type"
+  },
+  {
+   "id": 65,
+   "title": "Middag",
+   "group": "meal"
+  },
+  {
+   "id": 261,
+   "title": "Skalldyr",
+   "group": "main_ingredient"
+  }
+ ],
+ "url": "https://oda.com/no/recipes/1924-oda-pasta-med-scampi/",
+ "ingredients": [
+  {
+   "ingredient_id": 103,
+   "title": "Sitroner, økologisk",
+   "is_basic": false,
+   "packages_per_portion": 0.042,
+   "display_quantity": 2,
+   "display_unit": "ss",
+   "group": "Pasta med scampi",
+   "product": {
+    "id": 23921,
+    "name": "Økologiske Sitroner",
+    "full_name": "Økologiske Sitroner Spania / Sør Afrika",
+    "name_extra": "Spania / Sør Afrika, 2 stk",
+    "price": 30.8,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 1552,
+   "title": "Basilikum, fersk",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 1,
+   "display_unit": "stk",
+   "group": "Pasta med scampi",
+   "product": {
+    "id": 15157,
+    "name": "Fersk basilikum",
+    "full_name": "Fersk basilikum i Pose, Etiopia/ Kenya",
+    "name_extra": "i Pose, Etiopia/ Kenya, 20 g",
+    "price": 24.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 92,
+   "title": "Kruspersille, fersk",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 1,
+   "display_unit": "stk",
+   "group": "Pasta med scampi",
+   "product": {
+    "id": 15160,
+    "name": "Fersk Kruspersille",
+    "full_name": "Fersk Kruspersille i Beger/pose, Nederland/ Italia",
+    "name_extra": "i Beger/pose, Nederland/ Italia, 20 g",
+    "price": 24.1,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 28,
+   "title": "Parmesan, blokk",
+   "is_basic": false,
+   "packages_per_portion": 0.1,
+   "display_quantity": 50,
+   "display_unit": "g",
+   "group": "Topping",
+   "product": {
+    "id": 63604,
+    "name": "Parmigiano Reggiano Sticks",
+    "full_name": "Delivida Parmigiano Reggiano Sticks Lagret 12 mnd",
+    "name_extra": "Lagret 12 mnd, 125 g",
+    "price": 61.3,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 27,
+   "title": "Pasta, spaghetti",
+   "is_basic": false,
+   "packages_per_portion": 0.2,
+   "display_quantity": 400,
+   "display_unit": "g",
+   "group": "Pasta med scampi",
+   "product": {
+    "id": 66261,
+    "name": "Spaghetti Al Bronzo",
+    "full_name": "Barilla Spaghetti Al Bronzo",
+    "name_extra": "500 g",
+    "price": 37,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 1753,
+   "title": "Scampi",
+   "is_basic": false,
+   "packages_per_portion": 0.37,
+   "display_quantity": 400,
+   "display_unit": "g",
+   "group": "Pasta med scampi",
+   "product": {
+    "id": 28280,
+    "name": "Scampi",
+    "full_name": "R Scampi Ferdig kokt",
+    "name_extra": "Ferdig kokt, 270 g",
+    "price": 77.7,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 5,
+   "title": "Olivenolje, liten",
+   "is_basic": true,
+   "packages_per_portion": 0.008,
+   "display_quantity": 1,
+   "display_unit": "ss",
+   "group": "Pasta med scampi",
+   "product": {
+    "id": 23624,
+    "name": "Extra Virgin olivenolje",
+    "full_name": "Hellstrøm Extra Virgin olivenolje",
+    "name_extra": "0,5 l",
+    "price": 228.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 15,
+   "title": "Pepper, med kvern",
+   "is_basic": true,
+   "packages_per_portion": 0.019,
+   "display_quantity": 1,
+   "display_unit": "ts",
+   "group": "Pasta med scampi",
+   "product": {
+    "id": 6211,
+    "name": "Sort pepper hel",
+    "full_name": "Toro Sort pepper hel Med kvern",
+    "name_extra": "Med kvern, 65 g",
+    "price": 84.8,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 12,
+   "title": "Hvitløk, fersk",
+   "is_basic": true,
+   "packages_per_portion": 0.018,
+   "display_quantity": 3,
+   "display_unit": "fedd",
+   "group": "Pasta med scampi",
+   "product": {
+    "id": 9371,
+    "name": "Hvitløk",
+    "full_name": "Hvitløk 2-3pk, Kina/Spania",
+    "name_extra": "2-3pk, Kina/Spania, 100 g",
+    "price": 12.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 33,
+   "title": "Kylling-/hønse-buljong",
+   "is_basic": true,
+   "packages_per_portion": 0.004,
+   "display_quantity": 1,
+   "display_unit": "dl",
+   "group": "Pasta med scampi",
+   "product": {
+    "id": 25620,
+    "name": "Fond du Chef",
+    "full_name": "Knorr Fond du Chef Kylling, 4x28g",
+    "name_extra": "Maks 10 per kunde, Kylling, 4x28g, 112 g",
+    "price": 33.12,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 2026,
+   "title": "Margarin, blokk",
+   "is_basic": true,
+   "packages_per_portion": 0.015,
+   "display_quantity": 2,
+   "display_unit": "ss",
+   "group": "Pasta med scampi",
+   "product": {
+    "id": 1741,
+    "name": "Melange margarin",
+    "full_name": "Melange margarin",
+    "name_extra": "500 g",
+    "price": 36.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 30,
+   "title": "Salt, havsalt",
+   "is_basic": true,
+   "packages_per_portion": 0.063,
+   "display_quantity": 2,
+   "display_unit": "ss",
+   "group": "Pasta med scampi",
+   "product": {
+    "id": 563,
+    "name": "Rock Salt",
+    "full_name": "Santa Maria Rock Salt Med kvern",
+    "name_extra": "Med kvern, 140 g",
+    "price": 54.9,
+    "available": true
+   }
+  }
+ ]
+}

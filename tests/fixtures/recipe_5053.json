@@ -1,0 +1,163 @@
+{
+ "id": 5053,
+ "name": "Italiensk grønnsaksuppe med kjøttboller",
+ "default_portions": 4,
+ "duration": "25 min",
+ "difficulty": "Lett",
+ "tags": [
+  {
+   "id": 12,
+   "title": "Storfe",
+   "group": "main_ingredient"
+  },
+  {
+   "id": 16,
+   "title": "Supper",
+   "group": "type"
+  },
+  {
+   "id": 65,
+   "title": "Middag",
+   "group": "meal"
+  }
+ ],
+ "url": "https://oda.com/no/recipes/5053-silje-feiring-italiensk-gronnsaksuppe-med-kjottboller/",
+ "ingredients": [
+  {
+   "ingredient_id": 95,
+   "title": "Oregano, tørket",
+   "is_basic": false,
+   "packages_per_portion": 0.208,
+   "display_quantity": 1,
+   "display_unit": "ts",
+   "group": "",
+   "product": {
+    "id": 29677,
+    "name": "Soltørket oregano",
+    "full_name": "Helios Soltørket oregano Økologisk",
+    "name_extra": "Økologisk, 6 g",
+    "price": 29.8,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 28,
+   "title": "Parmesan, blokk",
+   "is_basic": false,
+   "packages_per_portion": 0.1,
+   "display_quantity": 50,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 63604,
+    "name": "Parmigiano Reggiano Sticks",
+    "full_name": "Delivida Parmigiano Reggiano Sticks Lagret 12 mnd",
+    "name_extra": "Lagret 12 mnd, 125 g",
+    "price": 61.3,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 1977,
+   "title": "Bladpersille",
+   "is_basic": false,
+   "packages_per_portion": 0.188,
+   "display_quantity": 1,
+   "display_unit": "håndfull",
+   "group": "",
+   "product": {
+    "id": 17767,
+    "name": "Fersk Bladpersille",
+    "full_name": "Fersk Bladpersille i Pose, Etiopia / Kenya",
+    "name_extra": "i Pose, Etiopia / Kenya, 20 g",
+    "price": 21.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 481,
+   "title": "Timian, tørket",
+   "is_basic": false,
+   "packages_per_portion": 0.062,
+   "display_quantity": 0.5,
+   "display_unit": "ts",
+   "group": "",
+   "product": {
+    "id": 29576,
+    "name": "Timian",
+    "full_name": "Helios Timian Økologisk",
+    "name_extra": "Økologisk, 10 g",
+    "price": 29.8,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 5887,
+   "title": "Salsicciapølse",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 400,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 66833,
+    "name": "Salsicciadeig",
+    "full_name": "Brødr Ringstad Salsicciadeig",
+    "name_extra": "400 g",
+    "price": 80.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 5770,
+   "title": "Kjøttkraft",
+   "is_basic": false,
+   "packages_per_portion": 0.5,
+   "display_quantity": 1,
+   "display_unit": "l",
+   "group": "",
+   "product": {
+    "id": 33255,
+    "name": "Klar oksekraft",
+    "full_name": "Maggi Klar oksekraft",
+    "name_extra": "500 ml",
+    "price": 51.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 36,
+   "title": "Makaroni",
+   "is_basic": false,
+   "packages_per_portion": 0.038,
+   "display_quantity": 100,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 698,
+    "name": "Makaroni snarkokt",
+    "full_name": "Sopps Makaroni snarkokt",
+    "name_extra": "650 g",
+    "price": 33.4,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 6089,
+   "title": "Italiensk suppe- og grytebase",
+   "is_basic": false,
+   "packages_per_portion": 0.417,
+   "display_quantity": 500,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 68584,
+    "name": "KUTTA Italiensk suppe- og grytebase",
+    "full_name": "Huseby Gaard KUTTA Italiensk suppe- og grytebase stangselleri, gulrot, purre og brokkolistilk",
+    "name_extra": "stangselleri, gulrot, purre og brokkolistilk, 300 g",
+    "price": 34.9,
+    "available": true
+   }
+  }
+ ]
+}

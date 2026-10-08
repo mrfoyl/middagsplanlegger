@@ -1,0 +1,231 @@
+{
+ "id": 3004,
+ "name": "Rask kylling stroganoff",
+ "default_portions": 4,
+ "duration": "15 min",
+ "difficulty": "Lett",
+ "tags": [
+  {
+   "id": 25,
+   "title": "Kylling",
+   "group": "main_ingredient"
+  },
+  {
+   "id": 55,
+   "title": "Raske middager",
+   "group": null
+  },
+  {
+   "id": 65,
+   "title": "Middag",
+   "group": "meal"
+  }
+ ],
+ "url": "https://oda.com/no/recipes/3004-oda-rask-kylling-stroganoff/",
+ "ingredients": [
+  {
+   "ingredient_id": 50,
+   "title": "Gul løk",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 2,
+   "display_unit": "stk",
+   "group": "Kylling stroganoff",
+   "product": {
+    "id": 9215,
+    "name": "Gul Løk",
+    "full_name": "Gul Løk Norge",
+    "name_extra": "Maks 10 per kunde, Norge, 2 stk",
+    "price": 20,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 40,
+   "title": "Seterrømme",
+   "is_basic": false,
+   "packages_per_portion": 0.033,
+   "display_quantity": 2,
+   "display_unit": "dl",
+   "group": "Kylling stroganoff",
+   "product": {
+    "id": 144,
+    "name": "Seterrømme",
+    "full_name": "TINE Seterrømme 35% fett",
+    "name_extra": "35% fett, 300 g",
+    "price": 28.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 1977,
+   "title": "Bladpersille",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 20,
+   "display_unit": "g",
+   "group": "Tilbehør",
+   "product": {
+    "id": 17767,
+    "name": "Fersk Bladpersille",
+    "full_name": "Fersk Bladpersille i Pose, Etiopia / Kenya",
+    "name_extra": "i Pose, Etiopia / Kenya, 20 g",
+    "price": 21.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 1249,
+   "title": "Paprika, spiss",
+   "is_basic": false,
+   "packages_per_portion": 0.175,
+   "display_quantity": 2,
+   "display_unit": "stk",
+   "group": "Kylling stroganoff",
+   "product": {
+    "id": 9320,
+    "name": "Stor Spisspaprika Rød",
+    "full_name": "Stor Spisspaprika Rød Klasse 1 Marokko / Spania / Nederland",
+    "name_extra": "Klasse 1 Marokko / Spania / Nederland, 300 g",
+    "price": 50.6,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 2321,
+   "title": "Gnocchi",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 500,
+   "display_unit": "g",
+   "group": "Tilbehør",
+   "product": {
+    "id": 31070,
+    "name": "Gnocchi",
+    "full_name": "Bertagni Gnocchi",
+    "name_extra": "500 g",
+    "price": 68.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 2415,
+   "title": "Kyllingfilet, strimlet",
+   "is_basic": false,
+   "packages_per_portion": 0.2,
+   "display_quantity": 400,
+   "display_unit": "g",
+   "group": "Kylling stroganoff",
+   "product": {
+    "id": 66905,
+    "name": "Kylling lårbiff strimlet",
+    "full_name": "Ytterøy Kylling lårbiff strimlet Saktevoksende kylling",
+    "name_extra": "Saktevoksende kylling, 500 g",
+    "price": 101.4,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 286,
+   "title": "Kremfløte",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 3,
+   "display_unit": "dl",
+   "group": "Kylling stroganoff",
+   "product": {
+    "id": 433,
+    "name": "Kremfløte",
+    "full_name": "TINE Kremfløte",
+    "name_extra": "3 dl",
+    "price": 27.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 725,
+   "title": "Paprikakrydder",
+   "is_basic": true,
+   "packages_per_portion": 0.125,
+   "display_quantity": 2,
+   "display_unit": "ss",
+   "group": "Kylling stroganoff",
+   "product": {
+    "id": 6094,
+    "name": "Paprika",
+    "full_name": "Toro Paprika Malt",
+    "name_extra": "Malt, 60 g",
+    "price": 45.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 1351,
+   "title": "Havsalt",
+   "is_basic": true,
+   "packages_per_portion": 0.004,
+   "display_quantity": 0.5,
+   "display_unit": "ts",
+   "group": "Kylling stroganoff",
+   "product": {
+    "id": 6088,
+    "name": "Havsalt",
+    "full_name": "Toro Havsalt Med Kvern",
+    "name_extra": "Med Kvern, 150 g",
+    "price": 74,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 133,
+   "title": "Solsikke/raps/stekeolje",
+   "is_basic": true,
+   "packages_per_portion": 0.012,
+   "display_quantity": 0.5,
+   "display_unit": "dl",
+   "group": "Kylling stroganoff",
+   "product": {
+    "id": 22318,
+    "name": "Rapsolje",
+    "full_name": "R Rapsolje",
+    "name_extra": "1 l",
+    "price": 29.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 15,
+   "title": "Pepper, med kvern",
+   "is_basic": true,
+   "packages_per_portion": 0.01,
+   "display_quantity": 0.5,
+   "display_unit": "ts",
+   "group": "Kylling stroganoff",
+   "product": {
+    "id": 6211,
+    "name": "Sort pepper hel",
+    "full_name": "Toro Sort pepper hel Med kvern",
+    "name_extra": "Med kvern, 65 g",
+    "price": 84.8,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 24,
+   "title": "Tomatpuré",
+   "is_basic": true,
+   "packages_per_portion": 0.029,
+   "display_quantity": 1,
+   "display_unit": "ss",
+   "group": "Kylling stroganoff",
+   "product": {
+    "id": 37094,
+    "name": "Tomatpuré",
+    "full_name": "Mutti Tomatpuré",
+    "name_extra": "130 g",
+    "price": 24.5,
+    "available": true
+   }
+  }
+ ]
+}

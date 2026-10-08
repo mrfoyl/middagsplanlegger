@@ -1,0 +1,185 @@
+{
+ "id": 2428,
+ "name": "Enchiladas med kjøttdeig",
+ "default_portions": 4,
+ "duration": "25 min",
+ "difficulty": "Lett",
+ "tags": [
+  {
+   "id": 6,
+   "title": "Meksikansk",
+   "group": "kitchen"
+  },
+  {
+   "id": 12,
+   "title": "Storfe",
+   "group": "main_ingredient"
+  },
+  {
+   "id": 65,
+   "title": "Middag",
+   "group": "meal"
+  },
+  {
+   "id": 260,
+   "title": "Kjøttdeig",
+   "group": "main_ingredient"
+  }
+ ],
+ "url": "https://oda.com/no/recipes/2428-oda-enchiladas-med-kjottdeig/",
+ "ingredients": [
+  {
+   "ingredient_id": 1279,
+   "title": "Tortillalefse, large",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 8,
+   "display_unit": "stk",
+   "group": "",
+   "product": {
+    "id": 7369,
+    "name": "Tortillas Hvete Large",
+    "full_name": "Old El Paso Tortillas Hvete Large 8stk, 23cm",
+    "name_extra": "8stk, 23cm, 467 g",
+    "price": 49,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 26,
+   "title": "Tomater, hakkede",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 400,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 9860,
+    "name": "Knuste tomater",
+    "full_name": "Mutti Knuste tomater Polpa",
+    "name_extra": "Polpa, 400 g",
+    "price": 25.1,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 58,
+   "title": "Chilipepper, grønn",
+   "is_basic": false,
+   "packages_per_portion": 0.07,
+   "display_quantity": 1,
+   "display_unit": "stk",
+   "group": "",
+   "product": {
+    "id": 24536,
+    "name": "Chilipepper Grønn",
+    "full_name": "Chilipepper Grønn Spania / Nederland",
+    "name_extra": "Spania / Nederland, 50 g",
+    "price": 22.3,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 110,
+   "title": "Kryddermiks, taco",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 25,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 8954,
+    "name": "Taco Spice Mix",
+    "full_name": "Old El Paso Taco Spice Mix",
+    "name_extra": "25 g",
+    "price": 10.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 115,
+   "title": "Revet ost",
+   "is_basic": false,
+   "packages_per_portion": 0.167,
+   "display_quantity": 200,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 161,
+    "name": "Revet ost",
+    "full_name": "TINE Revet ost Original",
+    "name_extra": "Original, 300 g",
+    "price": 52.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 140,
+   "title": "Kjøttdeig, storfe",
+   "is_basic": false,
+   "packages_per_portion": 0.167,
+   "display_quantity": 400,
+   "display_unit": "g",
+   "group": "",
+   "product": {
+    "id": 67937,
+    "name": "Kjøttdeig av storfe",
+    "full_name": "Grilstad Kjøttdeig av storfe",
+    "name_extra": "600 g",
+    "price": 124.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 54,
+   "title": "Avokado, fersk",
+   "is_basic": false,
+   "packages_per_portion": 0.125,
+   "display_quantity": 1,
+   "display_unit": "stk",
+   "group": "",
+   "product": {
+    "id": 9452,
+    "name": "Avokado modnet",
+    "full_name": "Avokado modnet Colombia/ Peru/ Kenya",
+    "name_extra": "Maks 10 per kunde, Colombia/ Peru/ Kenya, 2 stk",
+    "price": 30,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 85,
+   "title": "Rømme, lett",
+   "is_basic": false,
+   "packages_per_portion": 0.079,
+   "display_quantity": 1,
+   "display_unit": "dl",
+   "group": "",
+   "product": {
+    "id": 428,
+    "name": "Lettrømme",
+    "full_name": "TINE Lettrømme 17%",
+    "name_extra": "17%, 300 g",
+    "price": 23.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 81,
+   "title": "Koriander, frisk",
+   "is_basic": false,
+   "packages_per_portion": 0.094,
+   "display_quantity": 1,
+   "display_unit": "håndfull",
+   "group": "",
+   "product": {
+    "id": 15163,
+    "name": "Fersk Koriander",
+    "full_name": "Fersk Koriander i Pose, Etiopia/ Kenya",
+    "name_extra": "i Pose, Etiopia/ Kenya, 20 g",
+    "price": 24.9,
+    "available": true
+   }
+  }
+ ]
+}

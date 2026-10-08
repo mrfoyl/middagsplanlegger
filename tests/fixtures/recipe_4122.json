@@ -1,0 +1,214 @@
+{
+ "id": 4122,
+ "name": "Pasta al limone",
+ "default_portions": 4,
+ "duration": "20 min",
+ "difficulty": "Lett",
+ "tags": [
+  {
+   "id": 19,
+   "title": "Pasta",
+   "group": "type"
+  },
+  {
+   "id": 55,
+   "title": "Raske middager",
+   "group": null
+  },
+  {
+   "id": 65,
+   "title": "Middag",
+   "group": "meal"
+  }
+ ],
+ "url": "https://oda.com/no/recipes/4122-silje-feiring-pasta-al-limone/",
+ "ingredients": [
+  {
+   "ingredient_id": 3780,
+   "title": "Pasta, rigatoni",
+   "is_basic": false,
+   "packages_per_portion": 0.2,
+   "display_quantity": 400,
+   "display_unit": "g",
+   "group": "Pasta al limone",
+   "product": {
+    "id": 26233,
+    "name": "Mezzi Rigatoni",
+    "full_name": "Rummo Mezzi Rigatoni",
+    "name_extra": "500 g",
+    "price": 44.2,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 28,
+   "title": "Parmesan, blokk",
+   "is_basic": false,
+   "packages_per_portion": 0.2,
+   "display_quantity": 100,
+   "display_unit": "g",
+   "group": "Pasta al limone",
+   "product": {
+    "id": 63604,
+    "name": "Parmigiano Reggiano Sticks",
+    "full_name": "Delivida Parmigiano Reggiano Sticks Lagret 12 mnd",
+    "name_extra": "Lagret 12 mnd, 125 g",
+    "price": 61.3,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 103,
+   "title": "Sitroner, økologisk",
+   "is_basic": false,
+   "packages_per_portion": 0.125,
+   "display_quantity": 1,
+   "display_unit": "stk",
+   "group": "Pasta al limone",
+   "product": {
+    "id": 23921,
+    "name": "Økologiske Sitroner",
+    "full_name": "Økologiske Sitroner Spania / Sør Afrika",
+    "name_extra": "Spania / Sør Afrika, 2 stk",
+    "price": 30.8,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 286,
+   "title": "Kremfløte",
+   "is_basic": false,
+   "packages_per_portion": 0.167,
+   "display_quantity": 2,
+   "display_unit": "dl",
+   "group": "Pasta al limone",
+   "product": {
+    "id": 433,
+    "name": "Kremfløte",
+    "full_name": "TINE Kremfløte",
+    "name_extra": "3 dl",
+    "price": 27.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 1977,
+   "title": "Bladpersille",
+   "is_basic": false,
+   "packages_per_portion": 0.25,
+   "display_quantity": 20,
+   "display_unit": "g",
+   "group": "Topping",
+   "product": {
+    "id": 17767,
+    "name": "Fersk Bladpersille",
+    "full_name": "Fersk Bladpersille i Pose, Etiopia / Kenya",
+    "name_extra": "i Pose, Etiopia / Kenya, 20 g",
+    "price": 21.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 4019,
+   "title": "Meierismør",
+   "is_basic": true,
+   "packages_per_portion": 0.002,
+   "display_quantity": 2,
+   "display_unit": "ss",
+   "group": "Pasta al limone",
+   "product": {
+    "id": 130,
+    "name": "Ekte meierismør",
+    "full_name": "TINE Ekte meierismør",
+    "name_extra": "500 g",
+    "price": 61.4,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 15,
+   "title": "Pepper, med kvern",
+   "is_basic": true,
+   "packages_per_portion": 0.029,
+   "display_quantity": 0.5,
+   "display_unit": "ts",
+   "group": "Pasta al limone",
+   "product": {
+    "id": 6211,
+    "name": "Sort pepper hel",
+    "full_name": "Toro Sort pepper hel Med kvern",
+    "name_extra": "Med kvern, 65 g",
+    "price": 84.8,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 12,
+   "title": "Hvitløk, fersk",
+   "is_basic": true,
+   "packages_per_portion": 0.012,
+   "display_quantity": 2,
+   "display_unit": "fedd",
+   "group": "Pasta al limone",
+   "product": {
+    "id": 9371,
+    "name": "Hvitløk",
+    "full_name": "Hvitløk 2-3pk, Kina/Spania",
+    "name_extra": "2-3pk, Kina/Spania, 100 g",
+    "price": 12.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 3942,
+   "title": "Hvetemel",
+   "is_basic": true,
+   "packages_per_portion": 0,
+   "display_quantity": 1,
+   "display_unit": "ss",
+   "group": "Pasta al limone",
+   "product": {
+    "id": 1768,
+    "name": "Siktet hvetemel",
+    "full_name": "Norgesmøllene Siktet hvetemel",
+    "name_extra": "2 kg",
+    "price": 19.9,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 33,
+   "title": "Kylling-/hønse-buljong",
+   "is_basic": true,
+   "packages_per_portion": 0.003,
+   "display_quantity": 0.6,
+   "display_unit": "dl",
+   "group": "Pasta al limone",
+   "product": {
+    "id": 25620,
+    "name": "Fond du Chef",
+    "full_name": "Knorr Fond du Chef Kylling, 4x28g",
+    "name_extra": "Maks 10 per kunde, Kylling, 4x28g, 112 g",
+    "price": 33.12,
+    "available": true
+   }
+  },
+  {
+   "ingredient_id": 30,
+   "title": "Salt, havsalt",
+   "is_basic": true,
+   "packages_per_portion": 0.013,
+   "display_quantity": 0.5,
+   "display_unit": "ts",
+   "group": "Pasta al limone",
+   "product": {
+    "id": 563,
+    "name": "Rock Salt",
+    "full_name": "Santa Maria Rock Salt Med kvern",
+    "name_extra": "Med kvern, 140 g",
+    "price": 54.9,
+    "available": true
+   }
+  }
+ ]
+}
