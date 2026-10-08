@@ -310,6 +310,15 @@ class TestKurvflyt(MedData):
         with self.assertRaises(ValueError):
             planlegger.til_kurv(self.oda, plan, self.p)
 
+    def test_ekstravarer_gaar_i_kurven_og_krever_ny_godkjenning(self):
+        plan = self._klar_plan()
+        planlegger.godkjenn(self.oda, plan, self.p)
+        planlegger.ekstra(plan, 7597, "Knorr Hønsebuljong", 2, 22.72)
+        self.assertFalse(planlegger.er_godkjent(plan))
+        planlegger.godkjenn(self.oda, plan, self.p)
+        planlegger.til_kurv(self.oda, plan, self.p)
+        self.assertIn((7597, 2), self.oda.lagt_til)
+
     def test_trekk_fra_kurv(self):
         plan = self._klar_plan()
         planlegger.godkjenn(self.oda, plan, self.p)

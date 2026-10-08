@@ -177,6 +177,15 @@ def cmd_plan(a):
         linje = planlegger.erstatt(oda, plan, p, " ".join(vare), int(pid), a.navn, a.pris or 0.0)
         print(f"{linje['tittel']} → produkt {pid}")
         print(rapport.handleliste(planlegger.handleliste_for(oda, plan, p)))
+    elif h == "ekstra":
+        pid, *rest = a.args
+        antall = int(rest[0]) if rest else 1
+        if not a.navn:
+            raise ValueError("Oppgi --navn (og gjerne --pris) for ekstravaren.")
+        planlegger.ekstra(plan, int(pid), a.navn, antall, a.pris or 0.0)
+        print(f"Ekstra: {antall}× {a.navn} [{pid}]")
+    elif h == "ekstra-fjern":
+        print("Fjernet." if planlegger.fjern_ekstra(plan, int(a.args[0])) else "Fant ikke den varen blant ekstravarene.")
     elif h == "godkjenn":
         planlegger.godkjenn(oda, plan, p)
         print("Planen er godkjent.")
@@ -240,7 +249,7 @@ def parser():
     se.set_defaults(func=cmd_egen)
 
     spl = sub.add_parser("plan", help="ukesplan")
-    spl.add_argument("handling", choices=["lag", "vis", "json", "bytt", "dobbel", "fri", "ferdigmiddag", "avklar", "erstatt", "godkjenn", "kurv", "gjenapne", "ferdig"])
+    spl.add_argument("handling", choices=["lag", "vis", "json", "bytt", "dobbel", "fri", "ferdigmiddag", "avklar", "erstatt", "ekstra", "ekstra-fjern", "godkjenn", "kurv", "gjenapne", "ferdig"])
     spl.add_argument("args", nargs="*")
     spl.add_argument("--uke", help="f.eks. 2026-W42 (standard: neste uke)")
     spl.add_argument("--aktivitet", help="ekstra aktivitetsdager denne uken, f.eks. tir,tor")

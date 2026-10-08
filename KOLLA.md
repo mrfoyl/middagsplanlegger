@@ -31,6 +31,9 @@ Utskriften er WhatsApp-formatert og kan sendes rett til Ole.
    - `plan avklar <vare> har|kjop` svarer på spørsmålene under «❓».
    - `plan erstatt <vare> <produkt-id> --navn "..." --pris 39.90` velger et
      annet produkt. Finn ID med `produkt sok <ord>`.
+   - `plan ekstra <produkt-id> [antall] --navn "..." --pris 22.72` legger til varer
+     som ikke hører til en rett, for eksempel «vi trenger mer kyllingbuljong». Finn
+     ID-en med `produkt sok`. `plan ekstra-fjern <produkt-id>` tar varen ut igjen.
 3. Når Ole sier at planen ser bra ut: `plan godkjenn`. Det viser hva som legges
    i kurven («før»). Send det til Ole.
 4. Når Ole sier «legg i kurven» eller lignende: `plan kurv --utfor`. Send «etter»-

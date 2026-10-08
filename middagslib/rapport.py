@@ -47,6 +47,9 @@ def plan(plan_: dict, liste: dict) -> str:
     linjer += [dagslinje(d) for d in dager]
     linjer.append("")
     linjer.append(handleliste(liste))
+    if plan_.get("ekstra"):
+        linjer.append("*Ekstra (utenom rettene)*")
+        linjer += [f"  {x['antall']}× {x['navn']}" for x in plan_["ekstra"]]
     if plan_.get("advarsler"):
         linjer.append("")
         linjer.append("*Merk*")

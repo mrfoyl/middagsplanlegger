@@ -352,7 +352,7 @@ def lagre(plan: dict) -> None:
 
 
 def _hash(plan: dict) -> str:
-    innhold = {k: plan[k] for k in ("uke", "dager", "avklaringer", "produktvalg")}
+    innhold = {k: plan[k] for k in ("uke", "dager", "avklaringer", "produktvalg")} | {"ekstra": plan.get("ekstra", [])}
     return hashlib.sha256(json.dumps(innhold, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:16]
 
 
@@ -506,6 +506,31 @@ def erstatt(oda, plan: dict, p: dict, vare: str, produkt_id: int, navn: str = No
     return linje
 
 
+def ekstra(plan: dict, produkt_id: int, navn: str, antall: int = 1, pris: float = 0.0) -> None:
+    """Vare utenom rettene, f.eks. kyllingbuljong til skapet."""
+    liste = plan.setdefault("ekstra", [])
+    liste[:] = [x for x in liste if x["id"] != int(produkt_id)]
+    liste.append({"id": int(produkt_id), "navn": navn, "antall": int(antall), "pris": float(pris)})
+    _endret(plan)
+    lagre(plan)
+
+
+def fjern_ekstra(plan: dict, produkt_id: int) -> bool:
+    liste = plan.get("ekstra", [])
+    for i, x in enumerate(liste):
+        if x["id"] == int(produkt_id):
+            liste.pop(i)
+            _endret(plan)
+            lagre(plan)
+            return True
+    return False
+
+
+def _ekstralinje(x: dict) -> dict:
+    produkt = {"id": x["id"], "name": x["navn"], "full_name": x["navn"], "name_extra": "", "price": x.get("pris", 0), "available": True}
+    return {"nokkel": f"ekstra:{x['id']}", "tittel": x["navn"], "produkt": produkt, "antall": x["antall"], "ekstra": True}
+
+
 # --- til kurv ---
 
 def kurvplan(oda, plan: dict, p: dict, trekk_fra_kurv: bool = False) -> dict:
@@ -516,7 +541,7 @@ def kurvplan(oda, plan: dict, p: dict, trekk_fra_kurv: bool = False) -> dict:
     i_kurv = {x["id"]: x["quantity"] for x in kurv.get("items", [])}
     allerede_lagt = {x["id"] for logg in plan.get("kurvlogg", []) for x in logg["lagt"]} if plan["status"] == "delvis_i_kurv" else set()
     linjer, hoppet_over = [], []
-    for x in liste["kjop"]:
+    for x in liste["kjop"] + [_ekstralinje(e) for e in plan.get("ekstra", [])]:
         pid = x["produkt"]["id"]
         antall = x["antall"]
         if pid in allerede_lagt:
