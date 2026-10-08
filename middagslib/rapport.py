@@ -45,6 +45,10 @@ def plan(plan_: dict, liste: dict) -> str:
     dager = plan_["dager"]
     linjer = [f"*Middagsplan {plan_['uke']}* ({_dato(dager[0]['dato'])}–{_dato(dager[-1]['dato'])}), {plan_['porsjoner']} porsjoner – {STATUS.get(plan_['status'], plan_['status'])}"]
     linjer += [dagslinje(d) for d in dager]
+    lenker = [(d["dag"], d["navn"], d["url"]) for d in dager if d.get("url") and d["type"] in ("lag", "lag_dobbel")]
+    if lenker:
+        linjer.append("*Oppskrifter*")
+        linjer += [f"  {dag}: {url}" for dag, _, url in lenker]
     linjer.append("")
     linjer.append(handleliste(liste))
     if plan_.get("bytter"):
