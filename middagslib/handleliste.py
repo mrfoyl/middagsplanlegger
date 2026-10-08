@@ -5,6 +5,7 @@ trenger (0,25 pakke kremfløte per porsjon). Vi summerer brøkdelene for hele
 uken per ingrediens og runder opp én gang. To retter som bruker 2 dl og 1 dl
 fløte gir dermed én kartong i stedet for to, og vi ser hva som blir til overs.
 """
+import datetime as dt
 import math
 from collections import Counter, defaultdict
 
@@ -104,12 +105,20 @@ def beregn(retter, lagervarer, profil, avklaringer=None, produktvalg=None) -> di
 
         treffgrad, lagervare = lagermod.treff(lagervarer, tittel, *(([produkt["name"], produkt["full_name"]]) if produkt else []))
 
+        if treffgrad == "sikker" and valg != "kjop" and lagervare.get("lagt_til"):
+            alder = (dt.date.today() - dt.date.fromisoformat(lagervare["lagt_til"])).days
+            holdbar = matvarer.holdbarhet(lagervare["navn"])
+            if holdbar <= matvarer.FERSK_GRENSE and alder > holdbar:
+                treffgrad = "usikker"
+                info["gammel_lagervare"] = f"«{lagervare['navn']}» ble lagt inn for {alder} dager siden – fortsatt bra?"
+
         if valg != "kjop":
             if er_basis and _alltid_hjemme(tittel, profil) and treffgrad != "sikker":
                 res["basis_hjemme"].append(info)
                 continue
             if treffgrad == "usikker":
-                res["usikre"].append(info | {"grunn": f"lageret har «{lagervare['navn']}» – er det samme vare?", "lagervare": lagervare["navn"]})
+                grunn = info.pop("gammel_lagervare", None) or f"lageret har «{lagervare['navn']}» – er det samme vare?"
+                res["usikre"].append(info | {"grunn": grunn, "lagervare": lagervare["navn"]})
                 continue
             if treffgrad is None and er_basis:
                 res["usikre"].append(info | {"grunn": "basisvare – har dere nok hjemme?"})

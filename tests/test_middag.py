@@ -150,6 +150,14 @@ class TestHandleliste(MedData):
         self.assertNotIn("Kyllingfilet, strimlet", [x["tittel"] for x in liste["kjop"]])
         self.assertIn("Kyllingfilet, strimlet", [x["tittel"] for x in liste["fra_lager"]])
 
+    def test_gammel_ferskvare_gir_sporsmal(self):
+        lagervarer = [{"navn": "Bladpersille", "mengde": None, "lagt_til": "2020-01-01"}]
+        liste = handleliste.beregn([(self.r(3004), 4)], lagervarer, self.p)
+        self.assertIn("fortsatt bra", [u for u in liste["usikre"] if u["tittel"] == "Bladpersille"][0]["grunn"])
+        lagervarer[0]["lagt_til"] = __import__("datetime").date.today().isoformat()
+        liste = handleliste.beregn([(self.r(3004), 4)], lagervarer, self.p)
+        self.assertIn("Bladpersille", [x["tittel"] for x in liste["fra_lager"]])
+
     def test_basisvarer(self):
         liste = handleliste.beregn([(self.r(3004), 4)], [], self.p)
         self.assertIn("Havsalt", [x["tittel"] for x in liste["basis_hjemme"]])
