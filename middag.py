@@ -214,6 +214,20 @@ def cmd_plan(a):
         print("Uken er avsluttet." + (" Lagt i lageret: " + "; ".join(meldinger) if meldinger else ""))
 
 
+def cmd_skriv_ut(a):
+    import datetime as dt
+    from middagslib import utskrift
+    idag = dt.date.today()
+    if a.dag in (None, "i-dag", "idag"):
+        dato = idag
+    elif a.dag in ("i-morgen", "imorgen"):
+        dato = idag + dt.timedelta(days=1)
+    else:
+        plan = planlegger.last()
+        dato = dt.date.fromisoformat(planlegger.datoer(plan["uke"])[profil.normaliser_dag(a.dag)])
+    print(utskrift.skriv_ut(_oda(), planlegger.last(), dato, a.skriver, a.bare_fil, a.igjen))
+
+
 def parser():
     ap = argparse.ArgumentParser(prog="middag.py", description="Familie-middagsplanlegger for Oda. Bestiller aldri – fyller bare kurven.")
     sub = ap.add_subparsers(dest="kommando", required=True)
@@ -268,6 +282,12 @@ def parser():
     spl.add_argument("--navn")
     spl.add_argument("--pris", type=float)
     spl.set_defaults(func=cmd_plan)
+    su = sub.add_parser("skriv-ut", help="skriv ut dagens oppskrift")
+    su.add_argument("--dag", help="i-dag (standard), i-morgen eller ukedag (man, tir …)")
+    su.add_argument("--skriver", help="CUPS-kø (standard fra profilen)")
+    su.add_argument("--bare-fil", action="store_true", help="lag PDF uten å skrive ut")
+    su.add_argument("--igjen", action="store_true", help="skriv ut selv om den alt er skrevet ut")
+    su.set_defaults(func=cmd_skriv_ut)
     return ap
 
 
@@ -275,7 +295,7 @@ def main(argv=None):
     a = parser().parse_args(argv)
     try:
         a.func(a)
-    except (ValueError, OdaFeil) as e:
+    except (ValueError, OdaFeil, RuntimeError) as e:
         print(f"Feil: {e}", file=sys.stderr)
         return 1
     return 0

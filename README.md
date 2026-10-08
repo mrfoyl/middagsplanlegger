@@ -74,6 +74,27 @@ python3 middag.py profil sett kalender ja
 python3 middag.py profil sett kalender_sokeord "fotball,svømming,turn"
 ```
 
+### Utskrift av dagens oppskrift
+
+`python3 middag.py skriv-ut` skriver ut dagens oppskrift som en A4-PDF. Arket har
+ingredienser regnet om til porsjonene som skal lages, fremgangsmåten,
+produktbytter og påminnelser som «lag dobbel» og «ta ut fra fryseren i kveld».
+Utskriften går via CUPS (`lp`) til skriveren i profilen. Standard er
+`Brother-HL-L2400DW`, og den endres med `profil sett skriver <kø>`. Hver dag
+skrives bare ut én gang. Restedager og ferdigmiddager hoppes over.
+
+Krever `python3-reportlab` (finnes allerede på Pi-en). Uten den skrives en
+ren tekstversjon ut.
+
+Cron på Pi-en, hver ukedag kl. 07:00:
+
+```cron
+0 7 * * 1-5 cd ~/.openclaw/workspace/middagsplanlegger && python3 middag.py skriv-ut >> data/utskrift.log 2>&1
+```
+
+Annen dag eller manuelt: `skriv-ut --dag fre`, `--igjen`, eller `--bare-fil`
+for bare å lage PDF-en.
+
 ### Miljøvariabler
 
 | Variabel | Standard | Brukes til |
@@ -113,6 +134,7 @@ middagslib/
   enheter.py            «500 g», «3 dl», «4 x 125 g»
   kalender.py           aktivitetsdager fra Google-kalenderen (valgfritt)
   rapport.py            tekst for WhatsApp
+  utskrift.py           PDF av dagens oppskrift til skriveren
 tests/                  tester mot ekte Oda-oppskriftsdata i fixtures/
 ```
 

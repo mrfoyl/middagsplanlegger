@@ -170,6 +170,9 @@ class Oda:
     def oppskrift(self, oppskrift_id: int) -> dict:
         return self._json(["recipe", "ingredients", str(int(oppskrift_id))])
 
+    def oppskrift_detaljer(self, oppskrift_id: int) -> dict:
+        return self._json(["recipe", "details", str(int(oppskrift_id))])
+
     def kurv(self) -> dict:
         return self._json(["cart", "list"])
 

@@ -23,6 +23,7 @@ STANDARD = {
     "maks_tid_aktivitetsdag_min": 20,
     "porsjoner": None,
     "barnevennlig": True,
+    "skriver": "Brother-HL-L2400DW",
     "alltid_hjemme": ["salt", "havsalt", "pepper", "olje", "rapsolje", "olivenolje", "stekeolje", "sukker", "hvetemel", "vann"],
 }
 
@@ -30,6 +31,7 @@ STANDARD = {
 LISTEFELT = {"allergier", "unngaa", "liker", "middagsdager", "aktivitetsdager", "alltid_hjemme"}
 TALLFELT = {"maks_tid_min", "maks_tid_aktivitetsdag_min", "porsjoner"}
 BOOLFELT = {"barnevennlig"}
+TEKSTFELT = {"skriver"}
 
 
 def last() -> dict:
@@ -90,6 +92,8 @@ def sett(felt: str, verdi: str) -> dict:
         if felt in ("middagsdager", "aktivitetsdager"):
             verdier = [normaliser_dag(v) for v in verdier]
         p[felt] = verdier
+    elif felt in TEKSTFELT:
+        p[felt] = verdi.strip() or None
     elif felt in TALLFELT | BOOLFELT:
         p[felt] = _verdi(felt, verdi)
     elif felt == "kalender":
@@ -169,5 +173,6 @@ def tekst(p: dict) -> str:
     linjer.append(f"Kalender: {'på' if kal['aktiv'] else 'av'}" + (f" (søkeord: {', '.join(kal['sokeord'])})" if kal["sokeord"] else ""))
     linjer.append(f"Maks tid: {p['maks_tid_min']} min, aktivitetsdag: {p['maks_tid_aktivitetsdag_min']} min")
     linjer.append(f"Barnevennlig (unngå sterkt): {'ja' if p['barnevennlig'] else 'nei'}")
+    linjer.append(f"Skriver for oppskrifter: {p.get('skriver') or 'standardskriveren'}")
     linjer.append(f"Alltid hjemme: {', '.join(p['alltid_hjemme'])}")
     return "\n".join(linjer)

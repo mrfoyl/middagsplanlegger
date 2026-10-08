@@ -42,6 +42,9 @@ class FalskOda:
     def sok_produkt(self, sok, side=1):
         return {"items": self.produkter.get(sok, [])}
 
+    def oppskrift_detaljer(self, oid):
+        return {"name": "x", "description": "En god rett.", "ingredients": [], "instructions": ["Stek kjøttet.", "Server."]}
+
     def oppskrift(self, oid):
         return fixture_oppskrift(oid)
 
@@ -436,6 +439,39 @@ class TestBilligst(MedData):
         p = profil.sett("allergier", "nøtter")
         plan = planlegger.lag(self.oda, p, UKE, onsket=["3004"])
         self.assertFalse([b for b in plan["bytter"].values() if b["tittel"] == "Kremfløte"])
+
+
+class TestUtskrift(MedData):
+    def _plan(self):
+        p = profil.sett("aktivitetsdager", "ons")
+        plan = planlegger.lag(self.oda, p, UKE)
+        plan["status"] = "i_kurv"
+        planlegger.lagre(plan)
+        return plan
+
+    def test_innhold_for_dobbeldag_skalerer_og_minner_om_rest(self):
+        from middagslib import utskrift
+        plan = self._plan()
+        tir = [d for d in plan["dager"] if d["dag"] == "tir"][0]
+        self.assertEqual(tir["type"], "lag_dobbel")
+        data = utskrift.innhold(self.oda, plan, tir)
+        self.assertIn("8 porsjoner", data["undertittel"])
+        self.assertTrue(any("dobbel" in m for m in data["merknader"]))
+        self.assertEqual(data["steg"], ["Stek kjøttet.", "Server."])
+
+    def test_ikke_godkjent_plan_skrives_ikke_ut(self):
+        from middagslib import utskrift
+        plan = planlegger.lag(self.oda, self.p, UKE)
+        melding = utskrift.skriv_ut(self.oda, plan, __import__("datetime").date(2026, 10, 12), bare_fil=True)
+        self.assertIn("ikke godkjent", melding)
+
+    def test_lager_fil_og_hopper_over_restedag(self):
+        import datetime as dt
+        from middagslib import utskrift
+        plan = self._plan()
+        self.assertIn("Laget", utskrift.skriv_ut(self.oda, plan, dt.date(2026, 10, 12), bare_fil=True))
+        self.assertIn("ingen oppskrift", utskrift.skriv_ut(self.oda, plan, dt.date(2026, 10, 14), bare_fil=True))
+        self.assertIn("Ingen middag", utskrift.skriv_ut(self.oda, plan, dt.date(2026, 10, 17), bare_fil=True))
 
 
 class TestEgneOppskrifter(MedData):

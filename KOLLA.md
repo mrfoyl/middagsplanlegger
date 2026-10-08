@@ -52,6 +52,13 @@ Utskriften er WhatsApp-formatert og kan sendes rett til Ole.
 Endrer du noe etter godkjenning, må planen godkjennes på nytt. Verktøyet
 håndhever det.
 
+## Utskrift
+
+Cron skriver ut dagens oppskrift kl. 07 på Brother-laseren. Når Ole ber om det:
+- «Skriv ut oppskriften for fredag» → `skriv-ut --dag fre`
+- «Skriv ut i dag igjen» → `skriv-ut --igjen`
+- «Bruk Epson-skriveren» → `profil sett skriver Epson-ET-1810`
+
 ## Lager: det vi har hjemme
 
 - Ole skriver «vi har melk, 1 kg kjøttdeig og løk»:
