@@ -212,6 +212,23 @@ class TestPlan(MedData):
         self.assertEqual(man["type"], "lag")
         self.assertLessEqual(man["minutter"], self.p["maks_tid_aktivitetsdag_min"])
 
+    def test_mandag_tirsdag_aktivitet_fryser_til_neste_uke(self):
+        p = profil.sett("aktivitetsdager", "man,tir")
+        plan = planlegger.lag(self.oda, p, UKE)
+        dager = {d["dag"]: d for d in plan["dager"]}
+        for d in ("man", "tir"):
+            self.assertEqual(dager[d]["type"], "lag")
+            self.assertLessEqual(dager[d]["minutter"], p["maks_tid_aktivitetsdag_min"])
+        frys = [d for d in plan["dager"] if d.get("frys_til")]
+        self.assertEqual(sorted(d["frys_til"] for d in frys), ["man", "tir"])
+        self.assertTrue(all(d["type"] == "lag_dobbel" and d["frysbar"] for d in frys))
+        # Uken etter: ferdigmiddagene fra fryseren brukes mandag og tirsdag
+        plan["status"] = "i_kurv"
+        planlegger.ferdig(self.oda, plan, p)
+        neste = planlegger.lag(self.oda, p, "2026-W43")
+        nd = {d["dag"]: d for d in neste["dager"]}
+        self.assertEqual((nd["man"]["type"], nd["tir"]["type"]), ("ferdigmiddag", "ferdigmiddag"))
+
     def test_ferdigmiddag_fra_fryseren_brukes_forst(self):
         lager.legg_til("kjøttsaus", fryst_middag_porsjoner=4)
         plan = planlegger.lag(self.oda, self.p, UKE, ekstra_aktivitet=["tor"])

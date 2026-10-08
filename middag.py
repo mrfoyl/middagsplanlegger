@@ -130,6 +130,13 @@ def cmd_plan(a):
 
     if h == "lag":
         uke = a.uke or planlegger.neste_uke()
+        try:
+            forrige = planlegger.last()
+        except ValueError:
+            forrige = None
+        if forrige and forrige["uke"] < uke and forrige["status"] in ("i_kurv", "delvis_i_kurv"):
+            meldinger = planlegger.ferdig(oda, forrige, p)
+            print(f"Avsluttet {forrige['uke']}." + (" " + "; ".join(meldinger) if meldinger else ""))
         ekstra = [profil.normaliser_dag(d) for d in (a.aktivitet or "").split(",") if d.strip()]
         kalenderdager = set()
         if p["kalender"]["aktiv"]:

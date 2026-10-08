@@ -27,6 +27,8 @@ def dagslinje(d: dict) -> str:
     tid = f", {d['minutter']} min" if d.get("minutter") else ""
     if t == "lag":
         return f"{hode}: {d['navn']}{tid} [{d['ref']}]"
+    if t == "lag_dobbel" and d.get("frys_til"):
+        return f"{hode}: {d['navn']}{tid} – *lag dobbel*, frys ned til {d['frys_til']} neste uke [{d['ref']}]"
     if t == "lag_dobbel":
         return f"{hode}: {d['navn']}{tid} – *lag dobbel*, rest til {d['rest_til']} [{d['ref']}]"
     if t == "rest":

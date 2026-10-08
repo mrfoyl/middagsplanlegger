@@ -237,6 +237,12 @@ def lag(oda, p: dict, uke: str, ekstra_aktivitet=(), kalenderdager=(), onsket=()
             par[tidligere[-1]] = d
         else:
             raske.append(d)
+    # Aktivitetsdager uten en tidligere vanlig dag (f.eks. mandag) får en rask rett
+    # denne uken, og vi lager dobbel porsjon senere i uken som fryses til neste uke.
+    for d in raske:
+        senere = [v for v in vanlige if v not in par]
+        if senere:
+            par[senere[-1]] = f"neste:{d}"
 
     # 3. velg retter
     lagervarer = lagermod.last()
@@ -269,8 +275,12 @@ def lag(oda, p: dict, uke: str, ekstra_aktivitet=(), kalenderdager=(), onsket=()
     valgte += [(r, porsjoner * 2) for r in frys_retter]
     kokedager = sorted(par, key=_indeks)
     for kokedag in kokedager[len(frys_retter):]:
-        advarsler.append(f"Fant ingen frysbar rett til dobbel porsjon {kokedag} → {par[kokedag]}; {par[kokedag]} får en rask rett i stedet.")
-        raske.append(par.pop(kokedag))
+        restdag = par.pop(kokedag)
+        if restdag.startswith("neste:"):
+            advarsler.append(f"Fant ingen frysbar rett å lage dobbelt av til fryseren for neste {restdag[6:]}.")
+        else:
+            advarsler.append(f"Fant ingen frysbar rett til dobbel porsjon {kokedag} → {restdag}; {restdag} får en rask rett i stedet.")
+            raske.append(restdag)
     kokedager = sorted(par, key=_indeks)
 
     # Raske retter til aktivitetsdager uten rest
@@ -295,8 +305,11 @@ def lag(oda, p: dict, uke: str, ekstra_aktivitet=(), kalenderdager=(), onsket=()
     # 4. fordel på dager
     for kokedag, r in zip(kokedager, sorted(frys_retter, key=_korteste_holdbarhet)):
         restdag = par[kokedag]
-        avstand = _indeks(restdag) - _indeks(kokedag)
         _sett_rett(dager[kokedag], r, porsjoner, "lag_dobbel")
+        if restdag.startswith("neste:"):
+            dager[kokedag]["frys_til"] = restdag[6:]
+            continue
+        avstand = _indeks(restdag) - _indeks(kokedag)
         dager[kokedag]["rest_til"] = restdag
         dager[restdag].update({"type": "rest", "ref": r["ref"], "navn": r["navn"], "porsjoner": porsjoner, "fra_dag": kokedag,
                                "lagring": "kjøleskap" if avstand <= 2 else "fryser"})
@@ -404,7 +417,7 @@ def _lost_par(plan, d):
         if koke["type"] == "lag_dobbel":
             koke["type"] = "lag"
             koke.pop("rest_til", None)
-    for k in ("rest_til", "fra_dag", "lagring"):
+    for k in ("rest_til", "fra_dag", "lagring", "frys_til"):
         d.pop(k, None)
 
 
@@ -412,7 +425,11 @@ def bytt(oda, plan: dict, dag: str, ref: str) -> list:
     d = _finn_dag(plan, dag)
     r = oppskrifter.hent(oda, oppskrifter.normaliser_ref(ref))
     meldinger = []
-    if d["type"] == "lag_dobbel":
+    if d["type"] == "lag_dobbel" and not d.get("rest_til"):
+        _sett_rett(d, r, plan["porsjoner"], "lag_dobbel")
+        if not r["frysbar"]:
+            meldinger.append(f"OBS: {r['navn']} er ikke merket frysbar, men ekstraporsjonen skal fryses.")
+    elif d["type"] == "lag_dobbel":
         _sett_rett(d, r, plan["porsjoner"], "lag_dobbel")
         rest = _finn_dag(plan, d["rest_til"])
         rest.update({"ref": r["ref"], "navn": r["navn"]})
@@ -574,6 +591,9 @@ def ferdig(oda, plan: dict, p: dict) -> list:
         if d["type"] == "ferdigmiddag":
             lagermod.bruk_ferdigmiddag(d["navn"], d["porsjoner"])
             meldinger.append(f"Brukt fra fryseren: {d['navn']}")
+        if d["type"] == "lag_dobbel" and d.get("frys_til"):
+            lagermod.legg_til(d["navn"], fryst_middag_porsjoner=d["porsjoner"], notat=f"laget {d['dato']}")
+            meldinger.append(f"I fryseren: {d['navn']} ({d['porsjoner']} porsjoner)")
     plan["status"] = "ferdig"
     lagre(plan)
     return meldinger
