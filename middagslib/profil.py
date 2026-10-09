@@ -24,6 +24,7 @@ STANDARD = {
     "porsjoner": None,
     "barnevennlig": True,
     "skriver": "Brother-HL-L2400DW",
+    "whatsapp": None,
     "alltid_hjemme": ["salt", "havsalt", "pepper", "olje", "rapsolje", "olivenolje", "stekeolje", "sukker", "hvetemel", "vann"],
 }
 
@@ -31,7 +32,7 @@ STANDARD = {
 LISTEFELT = {"allergier", "unngaa", "liker", "middagsdager", "aktivitetsdager", "alltid_hjemme"}
 TALLFELT = {"maks_tid_min", "maks_tid_aktivitetsdag_min", "porsjoner"}
 BOOLFELT = {"barnevennlig"}
-TEKSTFELT = {"skriver"}
+TEKSTFELT = {"skriver", "whatsapp"}
 
 
 def last() -> dict:

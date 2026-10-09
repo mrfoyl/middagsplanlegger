@@ -632,9 +632,23 @@ def gjenapne(plan: dict) -> None:
 # --- etter uken ---
 
 def ferdig(oda, plan: dict, p: dict) -> list:
-    """Uken er over: registrer rester i lageret og trekk fra brukte ferdigmiddager."""
+    """Uken er over: trekk fra det rettene brukte av lageret, registrer rester og fryste middager."""
+    if plan["status"] == "ferdig":
+        raise ValueError(f"Uke {plan['uke']} er allerede avsluttet.")
     liste = handleliste_for(oda, plan, p)
     meldinger = []
+    # 1. Det rettene tok fra lageret
+    for x in liste["fra_lager"]:
+        if not x.get("lagervare"):
+            continue
+        dim, mengde = x["behov_basis"] if x.get("behov_basis") else (None, None)
+        m = lagermod.brukt(x["lagervare"], dim, mengde, ", ".join(x["retter"]), plan["uke"])
+        if m:
+            meldinger.append(m)
+    for x in liste["kjop"]:
+        if x.get("delvis_lager") and x.get("lagervare") and lagermod.fjern(x["lagervare"]):
+            meldinger.append(f"{x['lagervare']}: brukt opp")
+    # 2. Rester av det vi kjøpte
     for x in liste["kjop"]:
         if x["rest_pakker"] < handleliste.REST_VARSEL:
             continue

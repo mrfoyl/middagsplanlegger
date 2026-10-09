@@ -474,6 +474,54 @@ class TestUtskrift(MedData):
         self.assertIn("Ingen middag", utskrift.skriv_ut(self.oda, plan, dt.date(2026, 10, 17), bare_fil=True))
 
 
+class TestLagerHoldbarhet(MedData):
+    def _dager_siden(self, n):
+        import datetime as dt
+        return (dt.date.today() - dt.timedelta(days=n)).isoformat()
+
+    def _sett(self, varer):
+        lager.lagre(varer)
+
+    def test_ferdig_trekker_fra_brukt_mengde_og_merker_ukjent(self):
+        self._sett([
+            {"navn": "Kyllingfilet, strimlet", "mengde": "1 kg", "lagt_til": self._dager_siden(1)},
+            {"navn": "Gul løk", "mengde": None, "lagt_til": self._dager_siden(1)},
+        ])
+        plan = planlegger.lag(self.oda, self.p, UKE, onsket=["3004"])
+        planlegger.ferdig(self.oda, plan, self.p)
+        varer = {v["navn"]: v for v in lager.last()}
+        dag = [d for d in plan["dager"] if d["ref"] == "oda:3004"][0]
+        brukt_g = 400 * dag["porsjoner"] / 4 * (2 if dag["type"] == "lag_dobbel" else 1)
+        self.assertEqual(varer["Kyllingfilet, strimlet"]["mengde"], enheter.vis("masse", 1000 - brukt_g))
+        self.assertTrue(varer["Gul løk"]["sjekk"])
+        with self.assertRaises(ValueError):
+            planlegger.ferdig(self.oda, plan, self.p)
+
+    def test_rydd_fjerner_bare_ferskvare_som_er_dobbelt_for_gammel(self):
+        self._sett([
+            {"navn": "rød paprika", "mengde": None, "lagt_til": self._dager_siden(15)},   # 7 d -> borte etter 14
+            {"navn": "gul løk", "mengde": None, "lagt_til": self._dager_siden(30)},       # 21 d -> blir
+            {"navn": "jasminris", "mengde": None, "lagt_til": self._dager_siden(400)},    # tørrvare -> blir
+            {"navn": "kjøttsaus", "fryst_middag": True, "porsjoner": 4, "lagt_til": self._dager_siden(400)},
+        ])
+        fjernet = lager.rydd_utgatt()
+        self.assertEqual([n for n, _ in fjernet], ["rød paprika"])
+        self.assertEqual(sorted(v["navn"] for v in lager.last()), ["gul løk", "jasminris", "kjøttsaus"])
+
+    def test_sjekk_og_ok(self):
+        self._sett([
+            {"navn": "rød paprika", "mengde": None, "lagt_til": self._dager_siden(8)},
+            {"navn": "risnudler", "mengde": None, "lagt_til": self._dager_siden(1), "sjekk": True, "notat": "brukt i wok – sjekk"},
+            {"navn": "gulrøtter", "mengde": None, "lagt_til": self._dager_siden(2)},
+        ])
+        self.assertEqual(sorted(n for n, _ in lager.til_sjekk()), ["risnudler", "rød paprika"])
+        self.assertIn("Lagersjekk", lager.sjekkmelding([], lager.til_sjekk()))
+        lager.ok("rød paprika")
+        lager.ok("risnudler")
+        self.assertEqual(lager.til_sjekk(), [])
+        self.assertEqual(lager.sjekkmelding([], []), "")
+
+
 class TestEgneOppskrifter(MedData):
     def test_lag_bruk_og_synk(self):
         e = oppskrifter.lag_egen("Fredagstaco", 4, ["Kjøttdeig=1234:1:Gilde Kjøttdeig 400 g", "Tacoskjell=555:1", "Salt"], "Stek kjøttet.", 25)

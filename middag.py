@@ -58,7 +58,34 @@ def cmd_lager(a):
             print(f"Fjernet: {vare}" if lager.fjern(vare) else f"Fant ikke: {vare}")
     elif a.handling == "tom":
         print(f"Tømte lageret ({lager.tom()} varer).")
+    elif a.handling == "ok":
+        for vare in a.varer:
+            print(f"OK: {vare}" if lager.ok(vare) else f"Fant ikke: {vare}")
+    elif a.handling in ("rydd", "sjekk"):
+        fjernet = lager.rydd_utgatt()
+        melding = lager.sjekkmelding(fjernet, lager.til_sjekk() if a.handling == "sjekk" else [])
+        if not melding:
+            print("Ingenting å rydde eller sjekke.")
+            return
+        print(melding)
+        if a.send:
+            _send_whatsapp(melding)
+            print("(sendt på WhatsApp)")
+        return
     print(lager.tekst())
+
+
+def _send_whatsapp(melding):
+    import os
+    import shutil
+    import subprocess
+    nr = profil.last().get("whatsapp")
+    if not nr:
+        raise ValueError("Mangler WhatsApp-nummer: profil sett whatsapp +47...")
+    cli = os.environ.get("MIDDAG_OPENCLAW") or shutil.which("openclaw") or str(Path.home() / ".npm-global" / "bin" / "openclaw")
+    r = subprocess.run([cli, "message", "send", "--channel", "whatsapp", "-t", nr, "-m", melding], capture_output=True, text=True, timeout=60)
+    if r.returncode != 0:
+        raise RuntimeError(f"Sending feilet: {(r.stderr or r.stdout).strip()}")
 
 
 # --- oda ---
@@ -130,6 +157,9 @@ def cmd_plan(a):
 
     if h == "lag":
         uke = a.uke or planlegger.neste_uke()
+        fjernet = lager.rydd_utgatt()
+        if fjernet:
+            print("Fjernet gammel ferskvare fra lageret: " + ", ".join(f"{n} ({d} d)" for n, d in fjernet))
         try:
             forrige = planlegger.last()
         except ValueError:
@@ -239,10 +269,11 @@ def parser():
     sp.set_defaults(func=cmd_profil)
 
     sl = sub.add_parser("lager", help="det vi har hjemme")
-    sl.add_argument("handling", choices=["vis", "legg-til", "fjern", "tom"])
+    sl.add_argument("handling", choices=["vis", "legg-til", "fjern", "tom", "ok", "rydd", "sjekk"])
     sl.add_argument("varer", nargs="*", help='"vare" eller "vare=mengde", f.eks. "melk=1 l"')
     sl.add_argument("--mengde")
     sl.add_argument("--fryst-middag", type=int, metavar="PORSJONER", help="ferdigmiddag i fryseren")
+    sl.add_argument("--send", action="store_true", help="send lagersjekken på WhatsApp (openclaw)")
     sl.set_defaults(func=cmd_lager)
 
     so = sub.add_parser("oda", help="innlogging")

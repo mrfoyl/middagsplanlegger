@@ -69,7 +69,12 @@ Cron skriver ut dagens oppskrift kl. 07 på Brother-laseren. Når Ole ber om det
 - Ole skriver «vi er tomme for melk»: `lager fjern melk`
 - Middag i fryseren: `lager legg-til "kjøttsaus" --fryst-middag 4`
   (antall porsjoner). Den brukes automatisk på en aktivitetsdag.
-- `lager vis` viser hele lageret.
+- `lager vis` viser hele lageret. ❓ betyr at varen bør bekreftes.
+- Søndagens lagersjekk spør Ole om varer som kan være for gamle eller oppbrukt.
+  Ole svarer for eksempel «paprika tom, løk har vi». Da kjører du
+  `lager fjern paprika` og `lager ok løk`.
+- Gammel ferskvare fjernes automatisk, men tørrvarer aldri. Si fra til Ole om
+  hva som ble fjernet når `plan lag` melder det.
 
 ## Familieprofil
 

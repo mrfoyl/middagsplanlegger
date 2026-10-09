@@ -95,6 +95,26 @@ Cron på Pi-en, hver ukedag kl. 07:00:
 Annen dag eller manuelt: `skriv-ut --dag fre`, `--igjen`, eller `--bare-fil`
 for bare å lage PDF-en.
 
+### Lageret holdes ferskt
+
+- **Forbruk:** Når uken avsluttes (`plan ferdig`, kjøres automatisk av neste
+  `plan lag`), trekkes det rettene brukte fra lageret. Varer med kjent mengde
+  reduseres, og varer uten mengde merkes ❓ «sjekk om noe er igjen».
+- **Automatisk rydding:** Ferskvare som har ligget dobbelt så lenge som den
+  holder seg, fjernes ved `plan lag` og `lager rydd`. Tørrvarer, krydder og
+  ferdigmiddager i fryseren fjernes aldri automatisk.
+- **Ukentlig sjekk:** `lager sjekk --send` sender en liste på WhatsApp over
+  ferskvare som har passert holdbarheten og varer merket ❓. Svarene registreres
+  med `lager ok <vare>` (finnes fortsatt, ny dato) eller `lager fjern <vare>`.
+  Krever `profil sett whatsapp +47...`. Den sendes via
+  `openclaw message send`, på samme måte som ukeoppsummeringen.
+
+Cron på Pi-en, søndag kl. 18:00 før ukeplanen:
+
+```cron
+0 18 * * 0 cd ~/.openclaw/workspace/middagsplanlegger && python3 middag.py lager sjekk --send >> data/lagersjekk.log 2>&1
+```
+
 ### Miljøvariabler
 
 | Variabel | Standard | Brukes til |

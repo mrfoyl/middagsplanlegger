@@ -7,7 +7,7 @@ To typer oppføringer:
 import datetime as dt
 import difflib
 
-from . import enheter, lagring
+from . import enheter, lagring, matvarer
 from .matvarer import norm
 
 FIL = "lager.json"
@@ -126,6 +126,101 @@ def mengde_basis(vare: dict):
     return enheter.tolk_mengde(vare.get("mengde") or "")
 
 
+# --- holdbarhet og forbruk ---
+
+def alder(vare: dict, idag: dt.date = None) -> int:
+    if not vare.get("lagt_til"):
+        return 0
+    return ((idag or dt.date.today()) - dt.date.fromisoformat(vare["lagt_til"])).days
+
+
+def holdbar(vare: dict) -> int:
+    return matvarer.holdbarhet(vare["navn"])
+
+
+def _kan_bli_gammel(vare: dict) -> bool:
+    return not vare.get("fryst_middag") and holdbar(vare) < matvarer.TORRVARE_DAGER
+
+
+def brukt(navn: str, dim: str = None, mengde: float = None, rett: str = "", uke: str = "") -> str:
+    """Trekk fra det en rett brukte. Ukjent mengde -> merk varen for sjekk."""
+    varer = last()
+    i = _finn_indeks(varer, navn)
+    if i is None:
+        return None
+    v = varer[i]
+    har = mengde_basis(v)
+    if har and dim and mengde and har[0] == dim:
+        rest = har[1] - mengde
+        if rest <= har[1] * 0.05:
+            varer.pop(i)
+            melding = f"{v['navn']}: brukt opp"
+        else:
+            v["mengde"] = enheter.vis(dim, rest)
+            melding = f"{v['navn']}: {v['mengde']} igjen"
+    else:
+        v["sjekk"] = True
+        v["notat"] = f"brukt i {rett} ({uke}) – sjekk om noe er igjen" if rett else "brukt – sjekk om noe er igjen"
+        melding = f"{v['navn']}: brukt, sjekk om noe er igjen"
+    lagre(varer)
+    return melding
+
+
+def rydd_utgatt(idag: dt.date = None) -> list:
+    """Fjern ferskvare som har ligget dobbelt så lenge som den holder. Returnerer [(navn, dager)]."""
+    varer = last()
+    beholdt, fjernet = [], []
+    for v in varer:
+        if _kan_bli_gammel(v) and alder(v, idag) >= 2 * holdbar(v):
+            fjernet.append((v["navn"], alder(v, idag)))
+        else:
+            beholdt.append(v)
+    if fjernet:
+        lagre(beholdt)
+    return fjernet
+
+
+def til_sjekk(idag: dt.date = None) -> list:
+    """Varer Ole bør bekrefte: ferskvare forbi holdbarhet, og varer merket etter bruk."""
+    ut = []
+    for v in last():
+        if v.get("fryst_middag"):
+            continue
+        if v.get("sjekk"):
+            ut.append((v["navn"], v.get("notat") or "brukt – sjekk om noe er igjen"))
+        elif _kan_bli_gammel(v) and alder(v, idag) >= holdbar(v):
+            ut.append((v["navn"], f"lagt inn for {alder(v, idag)} dager siden"))
+    return ut
+
+
+def ok(navn: str) -> bool:
+    """Ole bekrefter at varen fortsatt finnes og er god: ny dato, ingen sjekk-merking."""
+    varer = last()
+    i = _finn_indeks(varer, navn)
+    if i is None:
+        return False
+    v = varer[i]
+    v["lagt_til"] = dt.date.today().isoformat()
+    v.pop("sjekk", None)
+    if (v.get("notat") or "").startswith("brukt"):
+        v.pop("notat")
+    lagre(varer)
+    return True
+
+
+def sjekkmelding(fjernet: list, sjekk: list) -> str:
+    if not fjernet and not sjekk:
+        return ""
+    linjer = ["*Lagersjekk*"]
+    if fjernet:
+        linjer.append("Fjernet fordi de har ligget lenge: " + ", ".join(f"{n} ({d} d)" for n, d in fjernet))
+    if sjekk:
+        linjer.append("Har dere fortsatt dette, og er det godt?")
+        linjer += [f"  • {n} – {grunn}" for n, grunn in sjekk]
+        linjer.append("Svar f.eks. «paprika tom, løk har vi».")
+    return "\n".join(linjer)
+
+
 def tekst(varer=None) -> str:
     varer = last() if varer is None else varer
     if not varer:
@@ -134,7 +229,7 @@ def tekst(varer=None) -> str:
     frys = ferdigmiddager(varer)
     linjer = ["*Hjemme*"]
     for v in vanlige:
-        linjer.append(f"  • {v['navn']}" + (f" ({v['mengde']})" if v.get("mengde") else ""))
+        linjer.append(f"  • {v['navn']}" + (f" ({v['mengde']})" if v.get("mengde") else "") + (" ❓" if v.get("sjekk") else ""))
     if frys:
         linjer.append("*Ferdigmiddager i fryseren*")
         for v in frys:
