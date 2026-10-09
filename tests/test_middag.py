@@ -10,7 +10,7 @@ from pathlib import Path
 ROT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROT))
 
-from middagslib import enheter, handleliste, lager, matvarer, oppskrifter, planlegger, profil  # noqa: E402
+from middagslib import enheter, handleliste, lager, matvarer, oppskrifter, planlegger, profil, rapport  # noqa: E402
 from middagslib.oda import IkkeTillatt, Oda, OdaFeil  # noqa: E402
 
 FIX = ROT / "tests" / "fixtures"
@@ -28,6 +28,7 @@ class FalskOda:
         self.innlogget = True
         self.feil_for = set()
         self.kurv_innhold = {}
+        self.kurv_overstyring = {}
         self.lagt_til = []
         self.lister_laget = []
         self.produkter = {}
@@ -50,7 +51,7 @@ class FalskOda:
 
     def kurv(self):
         items = [{"id": k, "quantity": v} for k, v in self.kurv_innhold.items()]
-        return {"items": items, "product_quantity_count": sum(self.kurv_innhold.values()), "display_price": 0}
+        return {"items": items, "product_quantity_count": sum(self.kurv_innhold.values()), "display_price": 0} | self.kurv_overstyring
 
     def sikre_innlogget(self):
         if not self.innlogget:
@@ -139,8 +140,20 @@ class TestHandleliste(MedData):
     def test_dobbel_porsjon_dobler_mengden(self):
         enkel = handleliste.beregn([(self.r(1966), 4)], [], self.p)
         dobbel = handleliste.beregn([(self.r(1966), 8)], [], self.p)
-        behov = lambda l: sum(x["pakker_behov"] for x in l["kjop"])
+        # Summer over kjop + usikre: en liten mengde kan krysse spørre-grensen og
+        # flytte seg mellom kategoriene når porsjonene dobles (f.eks. Karve).
+        behov = lambda l: sum(x["pakker_behov"] for x in l["kjop"]) + sum(x["pakker_behov"] for x in l["usikre"])
         self.assertAlmostEqual(behov(dobbel), 2 * behov(enkel), places=1)
+
+    def test_liten_mengde_krydder_sporres_ikke_autokjopes(self):
+        # Karve brukes med 6 % av pakken og er ikke flagget is_basic av Oda -- skal
+        # spørres om, ikke kjøpes blindt (jf. kanel-saken: hele pakker for en klype).
+        liste = handleliste.beregn([(self.r(1966), 4)], [], self.p)
+        self.assertNotIn("Karve", [x["tittel"] for x in liste["kjop"]])
+        usikre = {x["tittel"]: x for x in liste["usikre"]}
+        self.assertIn("Karve", usikre)
+        self.assertIn("% av pakken", usikre["Karve"]["grunn"])
+        self.assertIn("Kjøttdeig, storfe", [x["tittel"] for x in liste["kjop"]])
 
     def test_lager_sikker_og_usikker(self):
         lagervarer = [{"navn": "gul løk", "mengde": None}, {"navn": "pasta", "mengde": "500 g"}]
@@ -275,6 +288,51 @@ class TestPlan(MedData):
         self.assertEqual(plan["dager"][4]["type"], "mangler")
         with self.assertRaises(ValueError):
             planlegger.dobbel(plan, "fre", "man")
+
+    def test_lavt_belop_gir_ekstra_middag_i_fryseren(self):
+        plan = planlegger.lag(self.oda, self.p, UKE)
+        self.assertEqual(plan["ekstra_middager"], [])  # vanlig uke er godt over minstebeløpet
+
+        p = profil.sett("min_bestilling_kr", "100000")
+        plan = planlegger.lag(self.oda, p, UKE)
+        self.assertTrue(plan["ekstra_middager"])
+        self.assertTrue(all(x["frysbar"] for x in plan["ekstra_middager"]))
+        liste = planlegger.handleliste_for(self.oda, plan, p)
+        self.assertGreaterEqual(liste["sum"], 700)  # ikke nok til å nå 100000, men flere retter enn uten
+        refs_i_handleliste = {r["ref"] for r, _ in planlegger.retter(self.oda, plan)}
+        for x in plan["ekstra_middager"]:
+            self.assertIn(x["ref"], refs_i_handleliste)
+        self.assertIn("ekstra middag", plan["advarsler"][0].lower())
+
+    def test_minstebelop_tar_med_faste_varer(self):
+        # Faste ukevarer (bleier, brød osv.) legges også i kurven og teller mot
+        # minstebeløpet -- uten dette ble det lagt til unødvendige ekstra middager.
+        p = profil.sett("min_bestilling_kr", "1500")
+        p = profil.fast_vare(99999, "Testvare", antall=1, pris=200.0)
+        plan = planlegger.lag(self.oda, p, UKE)
+        self.assertEqual(plan["ekstra_middager"], [])
+
+    def test_minstebelop_bruker_rabattert_belop_i_kurven(self):
+        # Oda sin display_price kan se høyere ut enn det som faktisk belastes,
+        # fordi mengderabatt ("2 for 1" osv.) ikke trekkes fra der. Sjekken skal
+        # bruke det rabatterte beløpet, ikke display_price direkte.
+        p = profil.sett("min_bestilling_kr", "2500")
+        self.oda.kurv_overstyring = {"display_price": 99999, "discounted_display_price": 0}
+        plan = planlegger.lag(self.oda, p, UKE)
+        self.assertTrue(plan["ekstra_middager"])
+
+    def test_ferdig_legger_ekstra_middag_i_fryseren(self):
+        p = profil.sett("min_bestilling_kr", "100000")
+        plan = planlegger.lag(self.oda, p, UKE)
+        plan["status"] = "i_kurv"
+        for u in planlegger.handleliste_for(self.oda, plan, p)["usikre"]:
+            planlegger.avklar(self.oda, plan, p, u["tittel"], "har")
+        meldinger = planlegger.ferdig(self.oda, plan, p)
+        for x in plan["ekstra_middager"]:
+            self.assertTrue(any(x["navn"] in m for m in meldinger))
+        fryste_navn = {v["navn"] for v in lager.ferdigmiddager()}
+        for x in plan["ekstra_middager"]:
+            self.assertIn(x["navn"], fryste_navn)
 
 
 class TestKurvflyt(MedData):
@@ -612,6 +670,48 @@ class TestProfil(MedData):
         self.assertEqual(profil.sett("porsjoner", "5")["porsjoner"], 5)
         with self.assertRaises(ValueError):
             profil.sett("aktivitetsdager", "blursdag")
+
+
+class TestOdaRabatt(unittest.TestCase):
+    def test_bruker_rabattert_belop_naar_tilgjengelig(self):
+        kurv = {"display_price": 1350.9, "discounted_display_price": 1275.5}
+        self.assertEqual(Oda.belop_etter_rabatt(kurv), 1275.5)
+
+    def test_faller_tilbake_til_display_price_uten_rabattfelt(self):
+        self.assertEqual(Oda.belop_etter_rabatt({"display_price": 500}), 500)
+
+
+class TestRapportRabatt(unittest.TestCase):
+    def test_kurv_for_viser_rabattert_belop_og_advarsel(self):
+        # display_price (1350.9) ser ut til å nå grensen (1300), men etter Odas
+        # egen mengderabatt ("2 for 1") er reell sum 1275.5 -- under grensen.
+        kp = {
+            "linjer": [], "hoppet_over": [],
+            "kurv_for": {"display_price": 1350.9, "discounted_display_price": 1275.5,
+                         "product_quantity_count": 36, "items": []},
+        }
+        tekst = rapport.kurv_for(kp, {"min_bestilling_kr": 1300})
+        self.assertIn("før mengderabatt", tekst)
+        self.assertIn("tillegg for mindre bestillinger", tekst)
+
+    def test_kurv_for_uten_rabatt_viser_ingen_notis(self):
+        kp = {
+            "linjer": [], "hoppet_over": [],
+            "kurv_for": {"display_price": 1400, "product_quantity_count": 30, "items": []},
+        }
+        tekst = rapport.kurv_for(kp, {"min_bestilling_kr": 1300})
+        self.assertNotIn("før mengderabatt", tekst)
+
+    def test_kurv_etter_viser_rabattert_belop_og_advarsel(self):
+        res = {
+            "lagt": [], "feil": [], "hoppet_over": [],
+            "kurv_for": {"display_price": 1000, "product_quantity_count": 30, "items": []},
+            "kurv_etter": {"display_price": 1350.9, "discounted_display_price": 1275.5,
+                           "product_quantity_count": 36, "items": []},
+        }
+        tekst = rapport.kurv_etter(res, {"min_bestilling_kr": 1300})
+        self.assertIn("før mengderabatt", tekst)
+        self.assertIn("tillegg for mindre bestillinger", tekst)
 
 
 if __name__ == "__main__":

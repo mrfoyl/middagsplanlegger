@@ -64,7 +64,7 @@ cd ~/.openclaw/workspace/middagsplanlegger
 scripts/setup_oda.sh          # kloner mcp-oda, legger på patcher, bygger
 scripts/sett_oda_passord.sh   # spør om e-post/passord, skriver oda.env (600)
 python3 middag.py oda login   # tester innloggingen
-python3 tests/test_middag.py  # 41 tester, uten nettverk
+python3 tests/test_middag.py  # 63 tester, uten nettverk
 ```
 
 Valgfritt: kalenderen. Den bruker `gcalendar.py` i openclaw-workspace:
@@ -115,6 +115,24 @@ Cron på Pi-en, søndag kl. 18:00 før ukeplanen:
 0 18 * * 0 cd ~/.openclaw/workspace/middagsplanlegger && python3 middag.py lager sjekk --send >> data/lagersjekk.log 2>&1
 ```
 
+### Minstebeløp og mengderabatter
+
+Oda sin egen kurv-sum (`display_price`) er bare summen av varelinjenes
+ordinære pris. Den trekker **ikke** fra mengderabatter som «2 for 1» –
+den rabatten trekkes først fra når ordren faktisk belastes. For varer med
+en slik aktiv kampanje gir Oda også et eget felt
+(`discounted_display_price_total` per linje) med det reelle beløpet, men
+det blir borte i Odas vanlige kurv-API-sammendrag.
+
+`vendor/mcp-oda` (patch `0002`) leser nå dette feltet og legger sammen
+`discounted_display_price` for hele kurven. `middagslib/oda.py` sin
+`Oda.belop_etter_rabatt(kurv)` bruker det rabatterte beløpet når det finnes,
+og faller tilbake til `display_price` ellers. Både minstebeløp-sjekken i
+`sikre_minstebelop()` og det Ole får se i `plan kurv`/`plan kurv --utfor`
+bruker denne funksjonen, så planen ikke tror den er over grensen når den i
+praksis ikke er det. Rapportene viser i tillegg Odas urabatterte tall i
+parentes når de to avviker, så avviket er synlig.
+
 ### Miljøvariabler
 
 | Variabel | Standard | Brukes til |
@@ -135,6 +153,9 @@ Cron på Pi-en, søndag kl. 18:00 før ukeplanen:
   `recipes_get_ingredients`. Den gir produkt-ID, pakker per porsjon og
   basisvare-flagg for hver ingrediens. `recipe details` gir bare fritekst, og
   det er ikke nok til å slå sammen varer på tvers av retter.
+- Kurven (`cart list`) eksponerer også det reelle beløpet etter mengderabatter
+  (`discounted_display_price` på kurven, `discounted_line_total` per vare).
+  Se [Minstebeløp og mengderabatter](#minstebeløp-og-mengderabatter).
 
 `scripts/setup_oda.sh` gjenskaper forken fra upstream og patchene. Slik
 oppdaterer du upstream: endre `PIN`, slett `vendor/`, kjør skriptet på nytt og

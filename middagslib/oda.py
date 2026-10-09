@@ -176,6 +176,20 @@ class Oda:
     def kurv(self) -> dict:
         return self._json(["cart", "list"])
 
+    @staticmethod
+    def belop_etter_rabatt(kurv: dict) -> float:
+        """Det Oda faktisk belaster for kurven.
+
+        Odas eget `display_price` er bare summen av varelinjenes ordinære pris
+        og tar ikke høyde for mengderabatter som "2 for 1" -- den rabatten
+        trekkes først fra i `discounted_display_price` (mcp-oda sin
+        parseCartApi), som er det som faktisk belastes ved bestilling.
+        Faller tilbake til display_price for gamle data/fixtures uten feltet.
+        """
+        if kurv.get("discounted_display_price") is not None:
+            return kurv["discounted_display_price"]
+        return kurv.get("display_price") or 0.0
+
     def lister(self) -> list:
         return self._json(["list", "all"])
 

@@ -40,6 +40,13 @@ def cmd_profil(a):
         p = profil.fjern_medlem(int(a.felt))
     elif a.handling == "medlem-alder":
         p = profil.sett_alder(int(a.felt), int(a.verdi[0]))
+    elif a.handling == "fast-vare":
+        if not a.navn:
+            raise ValueError("Oppgi --navn (og gjerne --pris) for den faste varen.")
+        antall = int(a.verdi[0]) if a.verdi else 1
+        p = profil.fast_vare(int(a.felt), a.navn, antall, a.pris or 0.0)
+    elif a.handling == "fast-vare-fjern":
+        p = profil.fjern_fast_vare(int(a.felt))
     print(profil.tekst(p))
 
 
@@ -227,15 +234,15 @@ def cmd_plan(a):
     elif h == "godkjenn":
         planlegger.godkjenn(oda, plan, p)
         print("Planen er godkjent.")
-        print(rapport.kurv_for(planlegger.kurvplan(oda, plan, p, a.trekk_fra_kurv)))
+        print(rapport.kurv_for(planlegger.kurvplan(oda, plan, p, a.trekk_fra_kurv), p))
         print("Si «legg i kurven» så kjører jeg: plan kurv --utfor")
     elif h == "kurv":
         if a.utfor:
-            print(rapport.kurv_etter(planlegger.til_kurv(oda, plan, p, a.trekk_fra_kurv)))
+            print(rapport.kurv_etter(planlegger.til_kurv(oda, plan, p, a.trekk_fra_kurv), p))
         else:
             if not planlegger.er_godkjent(plan):
                 print("(Planen er ikke godkjent ennå – dette er bare en forhåndsvisning.)")
-            print(rapport.kurv_for(planlegger.kurvplan(oda, plan, p, a.trekk_fra_kurv)))
+            print(rapport.kurv_for(planlegger.kurvplan(oda, plan, p, a.trekk_fra_kurv), p))
     elif h == "gjenapne":
         planlegger.gjenapne(plan)
         print("Planen er åpnet igjen som utkast.")
@@ -263,9 +270,11 @@ def parser():
     sub = ap.add_subparsers(dest="kommando", required=True)
 
     sp = sub.add_parser("profil", help="familieprofil")
-    sp.add_argument("handling", choices=["vis", "sett", "legg-til", "fjern", "medlem-legg-til", "medlem-fjern", "medlem-alder"])
+    sp.add_argument("handling", choices=["vis", "sett", "legg-til", "fjern", "medlem-legg-til", "medlem-fjern", "medlem-alder", "fast-vare", "fast-vare-fjern"])
     sp.add_argument("felt", nargs="?")
     sp.add_argument("verdi", nargs="*")
+    sp.add_argument("--navn")
+    sp.add_argument("--pris", type=float)
     sp.set_defaults(func=cmd_profil)
 
     sl = sub.add_parser("lager", help="det vi har hjemme")

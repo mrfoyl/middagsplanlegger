@@ -1,6 +1,8 @@
 """Tekst for WhatsApp: *fet* skrift, korte linjer, norsk."""
 import datetime as dt
 
+from .oda import Oda
+
 STATUS = {"utkast": "utkast – ikke godkjent", "godkjent": "godkjent – klar for kurv", "i_kurv": "lagt i Oda-kurven", "delvis_i_kurv": "delvis lagt i kurven – noe feilet", "ferdig": "ferdig"}
 
 
@@ -49,6 +51,12 @@ def plan(plan_: dict, liste: dict) -> str:
     if lenker:
         linjer.append("*Oppskrifter*")
         linjer += [f"  {dag}: {url}" for dag, _, url in lenker]
+    if plan_.get("ekstra_middager"):
+        linjer.append("*Ekstra middag i fryseren* (for å nå minstebeløpet hos Oda)")
+        for x in plan_["ekstra_middager"]:
+            tid = f", {x['minutter']} min" if x.get("minutter") else ""
+            lenke = f" – {x['url']}" if x.get("url") else ""
+            linjer.append(f"  {x['navn']}{tid} [{x['ref']}]{lenke}")
     linjer.append("")
     linjer.append(handleliste(liste))
     if plan_.get("bytter"):
@@ -57,8 +65,10 @@ def plan(plan_: dict, liste: dict) -> str:
         for b in plan_["bytter"].values():
             linjer.append(f"  • {b['tittel']}: {b['til']} i stedet for {b['fra']} (−{_kr(b['spart'])})")
     if plan_.get("ekstra"):
+        ekstra_sum = sum(x["antall"] * x.get("pris", 0) for x in plan_["ekstra"])
         linjer.append("*Ekstra (utenom rettene)*")
         linjer += [f"  {x['antall']}× {x['navn']}" for x in plan_["ekstra"]]
+        linjer.append(f"*Totalsum inkl. faste varer*: ca {_kr(liste['sum'] + ekstra_sum)}")
     if plan_.get("advarsler"):
         linjer.append("")
         linjer.append("*Merk*")
@@ -106,7 +116,14 @@ def handleliste(liste: dict) -> str:
     return "\n".join(linjer)
 
 
-def kurv_for(kp: dict) -> str:
+def _tillegg_advarsel(totalbelop: float, p: dict) -> str | None:
+    grense = (p or {}).get("min_bestilling_kr") or 1300
+    if totalbelop < grense:
+        return f"⚠️ Kurven er på {_kr(totalbelop)}, under {_kr(grense)} – Oda legger på et tillegg for mindre bestillinger. Legg til flere varer (f.eks. «plan ekstra») før du bestiller."
+    return None
+
+
+def kurv_for(kp: dict, p: dict = None) -> str:
     linjer = ["*Dette legges i Oda-kurven* (ingenting er lagt til ennå)"]
     total = 0.0
     for l in kp["linjer"]:
@@ -119,14 +136,21 @@ def kurv_for(kp: dict) -> str:
     if kp["hoppet_over"]:
         linjer.append("*Hoppes over*: " + "; ".join(f"{x['tittel']} ({grunn})" for x, grunn in kp["hoppet_over"]))
     kurv = kp["kurv_for"]
-    linjer.append(f"Kurven har nå {kurv.get('product_quantity_count', len(kurv.get('items', [])))} varer for {_kr(kurv.get('display_price') or 0)}.")
+    i_kurv_na = Oda.belop_etter_rabatt(kurv)
+    linjer.append(f"Kurven har nå {kurv.get('product_quantity_count', len(kurv.get('items', [])))} varer for {_kr(i_kurv_na)}.")
+    if abs(i_kurv_na - (kurv.get("display_price") or 0)) > 0.5:
+        linjer.append(f"  (Oda viser {_kr(kurv.get('display_price') or 0)} før mengderabatt, f.eks. «2 for 1».)")
     if any(l["allerede_i_kurv"] for l in kp["linjer"]):
         linjer.append("Noen varer ligger allerede i kurven. Si fra om jeg skal trekke dem fra (--trekk-fra-kurv).")
+    projisert = i_kurv_na + total
+    advarsel = _tillegg_advarsel(projisert, p)
+    if advarsel:
+        linjer.append(advarsel)
     linjer.append("Jeg bestiller aldri – du trykker «bestill» selv i Oda.")
     return "\n".join(linjer)
 
 
-def kurv_etter(res: dict) -> str:
+def kurv_etter(res: dict, p: dict = None) -> str:
     linjer = [f"*Lagt i Oda-kurven*: {len(res['lagt'])} varer"]
     if res["feil"]:
         linjer.append("*Feilet*:")
@@ -134,7 +158,12 @@ def kurv_etter(res: dict) -> str:
     if res["hoppet_over"]:
         linjer.append("*Hoppet over*: " + "; ".join(f"{x['tittel']} ({grunn})" for x, grunn in res["hoppet_over"]))
     for navn, kurv in (("Før", res["kurv_for"]), ("Etter", res["kurv_etter"])):
-        linjer.append(f"{navn}: {kurv.get('product_quantity_count', '?')} varer, {_kr(kurv.get('display_price') or 0)}")
+        belop = Oda.belop_etter_rabatt(kurv)
+        tillegg = f" (Oda viser {_kr(kurv.get('display_price') or 0)} før mengderabatt)" if abs(belop - (kurv.get("display_price") or 0)) > 0.5 else ""
+        linjer.append(f"{navn}: {kurv.get('product_quantity_count', '?')} varer, {_kr(belop)}{tillegg}")
+    advarsel = _tillegg_advarsel(Oda.belop_etter_rabatt(res["kurv_etter"]), p)
+    if advarsel:
+        linjer.append(advarsel)
     if res["feil"] and res["lagt"]:
         linjer.append("Kjør plan kurv --utfor igjen for å prøve de feilede på nytt (det som alt er lagt til, hoppes over).")
     elif res["feil"]:

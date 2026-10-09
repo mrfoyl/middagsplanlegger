@@ -8,6 +8,9 @@ Fordeling:
 3. Aktivitetsdager uten en tidligere vanlig dag får en rask rett.
 4. Vanlige dager sorteres slik at retter med kortest holdbare råvarer
    (fisk, kjøttdeig, urter) kommer først etter levering.
+5. Hvis handlelisten (pluss det som allerede ligger i Oda-kurven) ikke når
+   familiens minstebeløp, legges en eller flere ekstra frysbare middager til
+   i fryseren – se sikre_minstebelop().
 
 Utvalget er grådig: hver ny rett velges ut fra hva den gjør med *hele* ukens
 handleliste – ekstra kostnad, ferskvare som blir liggende, og variasjon.
@@ -19,7 +22,7 @@ import math
 
 from . import billigst, enheter, handleliste, lagring, matvarer, oppskrifter, profil as profilmod
 from . import lager as lagermod
-from .oda import OdaFeil
+from .oda import Oda, OdaFeil
 
 PLAN = "plan.json"
 HISTORIKK = "historikk.json"
@@ -334,9 +337,17 @@ def lag(oda, p: dict, uke: str, ekstra_aktivitet=(), kalenderdager=(), onsket=()
         "advarsler": advarsler,
         "kurvlogg": [],
         "bytter": {},
+        "ekstra": [dict(x) for x in p.get("faste_varer", [])],
+        "ekstra_middager": [],
     }
     lagre(plan)
     optimaliser_priser(oda, plan, p, logg)
+    # Prisoptimalisering kan presse summen under minstebeløpet igjen (billigere varer på de
+    # nye rettene), så vi veksler mellom de to til ingen flere ekstra middager trengs.
+    for _ in range(5):
+        if not sikre_minstebelop(oda, plan, p, maks_kandidater, logg):
+            break
+        optimaliser_priser(oda, plan, p, logg)
     return plan
 
 
@@ -355,6 +366,54 @@ def optimaliser_priser(oda, plan: dict, p: dict, logg=lambda *_: None) -> list:
     _endret(plan)
     lagre(plan)
     return list(nye.values())
+
+
+def sikre_minstebelop(oda, plan: dict, p: dict, maks_kandidater: int = 30, logg=lambda *_: None) -> list:
+    """Legg til ekstra frysbare middager hvis handlelisten (+ det som allerede ligger i kurven)
+    havner under Oda sitt minstebeløp, så vi slipper tillegget for mindre bestillinger."""
+    grense = p.get("min_bestilling_kr") or 1300
+    try:
+        oda.sikre_innlogget()
+        i_kurv = Oda.belop_etter_rabatt(oda.kurv())
+    except OdaFeil as e:
+        logg(f"Fant ikke kurven for minstebeløp-sjekk: {e}")
+        i_kurv = 0
+
+    # Faste ukevarer (bleier, brød, melk osv.) legges også i kurven og teller mot
+    # minstebeløpet, selv om de ikke er med i handleliste-summen for middagsrettene.
+    ekstra_sum = sum(x.get("antall", 1) * x.get("pris", 0) for x in plan.get("ekstra", []))
+
+    historikk = nylig_brukt(plan["uke"])
+    lagervarer = lagermod.last()
+    maks_tid = p.get("maks_tid_min")
+    innen_tid = lambda r: not maks_tid or not r.get("minutter") or r["minutter"] <= maks_tid
+    pool = None
+    lagt_til = []
+    for _ in range(10):
+        liste = handleliste_for(oda, plan, p)
+        if i_kurv + liste["sum"] + ekstra_sum >= grense:
+            break
+        if pool is None:
+            pool = kandidater(oda, p, plan["uke"], maks_kandidater, logg)
+        nye = velg(pool, 1, plan["porsjoner"], p, lagervarer, retter(oda, plan), historikk, plan["uke"],
+                   krav=lambda r: r.get("frysbar") and innen_tid(r))
+        if not nye:
+            break
+        r = nye[0]
+        plan.setdefault("ekstra_middager", []).append({
+            "ref": r["ref"], "navn": r["navn"], "porsjoner": plan["porsjoner"],
+            "minutter": r.get("minutter"), "url": r.get("url", ""), "frysbar": True,
+        })
+        lagt_til.append(r["navn"])
+
+    if lagt_til:
+        plan["advarsler"].append(
+            f"La til {len(lagt_til)} ekstra middag(er) i fryseren for å nå minstebeløpet "
+            f"({', '.join(lagt_til)}): kurven var under {int(grense)} kr."
+        )
+        _endret(plan)
+        lagre(plan)
+    return lagt_til
 
 
 def original(oda, plan: dict, p: dict, vare: str) -> str:
@@ -384,7 +443,7 @@ def lagre(plan: dict) -> None:
 
 
 def _hash(plan: dict) -> str:
-    innhold = {k: plan[k] for k in ("uke", "dager", "avklaringer", "produktvalg")} | {"ekstra": plan.get("ekstra", [])}
+    innhold = {k: plan[k] for k in ("uke", "dager", "avklaringer", "produktvalg")} | {"ekstra": plan.get("ekstra", []), "ekstra_middager": plan.get("ekstra_middager", [])}
     return hashlib.sha256(json.dumps(innhold, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:16]
 
 
@@ -401,6 +460,8 @@ def retter(oda, plan: dict) -> list:
         if d["type"] in ("lag", "lag_dobbel") and d.get("ref"):
             r = oppskrifter.hent(oda, d["ref"])
             ut.append((r, d["porsjoner"] * (2 if d["type"] == "lag_dobbel" else 1)))
+    for x in plan.get("ekstra_middager", []):
+        ut.append((oppskrifter.hent(oda, x["ref"]), x["porsjoner"]))
     return ut
 
 
@@ -666,6 +727,9 @@ def ferdig(oda, plan: dict, p: dict) -> list:
         if d["type"] == "lag_dobbel" and d.get("frys_til"):
             lagermod.legg_til(d["navn"], fryst_middag_porsjoner=d["porsjoner"], notat=f"laget {d['dato']}")
             meldinger.append(f"I fryseren: {d['navn']} ({d['porsjoner']} porsjoner)")
+    for x in plan.get("ekstra_middager", []):
+        lagermod.legg_til(x["navn"], fryst_middag_porsjoner=x["porsjoner"], notat=f"ekstra middag, laget uke {plan['uke']}")
+        meldinger.append(f"I fryseren: {x['navn']} ({x['porsjoner']} porsjoner, ekstra)")
     plan["status"] = "ferdig"
     lagre(plan)
     return meldinger

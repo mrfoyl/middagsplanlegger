@@ -26,11 +26,13 @@ STANDARD = {
     "skriver": "Brother-HL-L2400DW",
     "whatsapp": None,
     "alltid_hjemme": ["salt", "havsalt", "pepper", "olje", "rapsolje", "olivenolje", "stekeolje", "sukker", "hvetemel", "vann"],
+    "faste_varer": [],
+    "min_bestilling_kr": 1300,
 }
 
 # Felter som er lister og kan endres med legg-til / fjern
 LISTEFELT = {"allergier", "unngaa", "liker", "middagsdager", "aktivitetsdager", "alltid_hjemme"}
-TALLFELT = {"maks_tid_min", "maks_tid_aktivitetsdag_min", "porsjoner"}
+TALLFELT = {"maks_tid_min", "maks_tid_aktivitetsdag_min", "porsjoner", "min_bestilling_kr"}
 BOOLFELT = {"barnevennlig"}
 TEKSTFELT = {"skriver", "whatsapp"}
 
@@ -134,6 +136,24 @@ def fjern(felt: str, verdier) -> dict:
     return p
 
 
+def fast_vare(produkt_id: int, navn: str, antall: int = 1, pris: float = 0.0) -> dict:
+    """Vare som skal legges i hver ukes handleliste automatisk, f.eks. bleier."""
+    p = last()
+    liste = p.setdefault("faste_varer", [])
+    liste[:] = [x for x in liste if x["id"] != int(produkt_id)]
+    liste.append({"id": int(produkt_id), "navn": navn, "antall": int(antall), "pris": float(pris)})
+    lagre(p)
+    return p
+
+
+def fjern_fast_vare(produkt_id: int) -> dict:
+    p = last()
+    liste = p.get("faste_varer", [])
+    p["faste_varer"] = [x for x in liste if x["id"] != int(produkt_id)]
+    lagre(p)
+    return p
+
+
 def legg_til_medlem(beskrivelse: str, alder: int) -> dict:
     p = last()
     p["medlemmer"].append({"beskrivelse": beskrivelse, "alder": int(alder)})
@@ -176,4 +196,8 @@ def tekst(p: dict) -> str:
     linjer.append(f"Barnevennlig (unngå sterkt): {'ja' if p['barnevennlig'] else 'nei'}")
     linjer.append(f"Skriver for oppskrifter: {p.get('skriver') or 'standardskriveren'}")
     linjer.append(f"Alltid hjemme: {', '.join(p['alltid_hjemme'])}")
+    faste = p.get("faste_varer", [])
+    if faste:
+        linjer.append("Faste ukevarer: " + ", ".join(f"{x['antall']}× {x['navn']}" for x in faste))
+    linjer.append(f"Min. bestilling: {p.get('min_bestilling_kr', 1300)} kr (for å unngå Oda sitt tillegg for mindre bestillinger)")
     return "\n".join(linjer)

@@ -1,0 +1,89 @@
+From 890f527ffea9f9c3ef36508996ecae594cae7229 Mon Sep 17 00:00:00 2001
+From: middag <middag@localhost>
+Date: Fri, 9 Oct 2026 13:51:43 +0200
+Subject: [PATCH] feat: expose discounted cart totals (e.g. 2-for-1 campaigns)
+
+Oda's own display_price on the cart is the sum of ordinary line prices and
+ignores quantity-based campaign discounts (e.g. a '2 for 1' mix-and-match
+promo). The real charge per line lives in discounted_display_price_total,
+present only when a discount is active. Expose it as
+CartLine.discounted_line_total and sum it into Cart.discounted_display_price
+so callers can tell the real payable total from Oda's undiscounted summary.
+---
+ src/oda-client.ts | 15 ++++++++++++++-
+ src/types.ts      | 12 ++++++++++++
+ 2 files changed, 26 insertions(+), 1 deletion(-)
+
+diff --git a/src/oda-client.ts b/src/oda-client.ts
+index d15a8ff..1231c20 100644
+--- a/src/oda-client.ts
++++ b/src/oda-client.ts
+@@ -565,21 +565,34 @@ export class OdaClient {
+ 
+     for (const { item, group } of rawItems) {
+       const base = this.parseWireItem(item);
++      const lineTotal = parseFloat(item.display_price_total) || base.price * base.quantity;
++      // Oda omits quantity-based campaigns (e.g. "2 for 1") from both
++      // display_price_total and the cart-level display_price. The real
++      // charge per line lives in discounted_display_price_total, present
++      // only when a discount is active; fall back to lineTotal otherwise.
++      const discountedLineTotal =
++        item.discounted_display_price_total != null
++          ? parseFloat(item.discounted_display_price_total)
++          : lineTotal;
+       const line: CartLine = {
+         ...base,
+         item_id: item.item_id || 0,
+-        line_total: parseFloat(item.display_price_total) || base.price * base.quantity,
++        line_total: lineTotal,
++        discounted_line_total: discountedLineTotal,
+       };
+       if (group?.title) line.group_title = group.title;
+       if (group?.group_type) line.group_type = group.group_type;
+       items.push(line);
+     }
+ 
++    const discountedDisplayPrice = items.reduce((sum, line) => sum + line.discounted_line_total, 0);
++
+     return {
+       label_text: data.label_text || "",
+       product_quantity_count: data.product_quantity_count || 0,
+       display_price: parseFloat(data.display_price) || 0,
+       total_gross_amount: parseFloat(data.total_gross_amount) || 0,
++      discounted_display_price: Math.round(discountedDisplayPrice * 100) / 100,
+       items,
+     };
+   }
+diff --git a/src/types.ts b/src/types.ts
+index 6a7c31f..4a49f16 100644
+--- a/src/types.ts
++++ b/src/types.ts
+@@ -37,6 +37,12 @@ export interface CartItem {
+ export interface CartLine extends CartItem {
+   item_id: number;
+   line_total: number;
++  /**
++   * What this line actually costs after quantity-based campaigns (e.g. a
++   * "2 for 1" mix-and-match discount). Equal to line_total when no such
++   * discount applies. Oda's own `display_price` on the cart ignores this.
++   */
++  discounted_line_total: number;
+   group_title?: string;
+   group_type?: string;
+ }
+@@ -46,6 +52,12 @@ export interface Cart {
+   product_quantity_count: number;
+   display_price: number;
+   total_gross_amount: number;
++  /**
++   * Sum of items[].discounted_line_total: the real amount Oda will charge,
++   * including quantity-based campaign discounts that `display_price` omits.
++   * Equal to display_price when no line has an active discount.
++   */
++  discounted_display_price: number;
+   items: CartLine[];
+ }
+ 
+-- 
+2.47.3
+

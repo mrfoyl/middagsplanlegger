@@ -13,6 +13,7 @@ from . import enheter, lager as lagermod, matvarer
 
 TOLERANSE = 0.1     # 1,05 pakker behov -> kjøp 1 pakke, ikke 2
 REST_VARSEL = 0.25  # varsle om ferskvare-rester fra en kvart pakke og opp
+LITEN_MENGDE_GRENSE = 0.1  # brukes <10 % av pakken og er ikke ferskvare -> spør, kjøp ikke blindt
 
 
 def nokkel(ingrediens: dict) -> str:
@@ -123,6 +124,10 @@ def beregn(retter, lagervarer, profil, avklaringer=None, produktvalg=None) -> di
                 continue
             if treffgrad is None and er_basis:
                 res["usikre"].append(info | {"grunn": "basisvare – har dere nok hjemme?"})
+                continue
+            if treffgrad is None and not fersk and 0 < pakker < LITEN_MENGDE_GRENSE:
+                prosent = round(pakker * 100)
+                res["usikre"].append(info | {"grunn": f"kun {prosent} % av pakken brukes – har du fra før?"})
                 continue
 
         if treffgrad == "sikker" and valg != "kjop":
