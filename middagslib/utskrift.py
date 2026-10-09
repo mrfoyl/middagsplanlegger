@@ -171,24 +171,34 @@ def skriv_ut(oda, plan: dict, dato: dt.date, skriver: str = None, bare_fil: bool
     if d["dato"] in utskrevet and not igjen and not bare_fil:
         return f"Oppskriften for {d['dato']} er allerede skrevet ut (bruk --igjen for å skrive ut på nytt)."
 
-    data = innhold(oda, plan, d)
+    ark = [innhold(oda, plan, d)]
+    for x in plan.get("ekstra_middager", []):
+        if x.get("lagedag") == d["dag"]:
+            ekstra = innhold(oda, plan, {"dag": d["dag"], "dato": d["dato"], "type": "lag", "ref": x["ref"], "porsjoner": x["porsjoner"]})
+            ekstra["merknader"] = ["Ekstra middag til fryseren: lag denne i tillegg i dag og frys den ned."]
+            ark.append(ekstra)
     katalog = lagring.datakatalog() / "utskrift"
     katalog.mkdir(exist_ok=True)
-    navn = f"{d['dato']}-{oppskrifter.slug(data['tittel'])}"
-    try:
-        fil = lag_pdf(data, katalog / f"{navn}.pdf")
-    except ImportError:
-        fil = lag_tekst(data, katalog / f"{navn}.txt")
+    filer = []
+    for data in ark:
+        navn = f"{d['dato']}-{oppskrifter.slug(data['tittel'])}"
+        try:
+            filer.append(lag_pdf(data, katalog / f"{navn}.pdf"))
+        except ImportError:
+            filer.append(lag_tekst(data, katalog / f"{navn}.txt"))
     if bare_fil:
-        return f"Laget {fil} (ikke skrevet ut)."
+        return "Laget " + ", ".join(str(f) for f in filer) + " (ikke skrevet ut)."
 
     skriver = skriver or profilmod.last().get("skriver")
     if not shutil.which("lp"):
         raise RuntimeError(f"Fant ikke `lp` (CUPS). Filen ligger i {fil}.")
-    args = ["lp"] + (["-d", skriver] if skriver else []) + ["-t", data["tittel"], str(fil)]
-    r = subprocess.run(args, capture_output=True, text=True, timeout=60)
-    if r.returncode != 0:
-        raise RuntimeError(f"Utskrift feilet: {(r.stderr or r.stdout).strip()}")
+    jobber = []
+    for data, fil in zip(ark, filer):
+        args = ["lp"] + (["-d", skriver] if skriver else []) + ["-t", data["tittel"], str(fil)]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=60)
+        if r.returncode != 0:
+            raise RuntimeError(f"Utskrift feilet for «{data['tittel']}»: {(r.stderr or r.stdout).strip()}")
+        jobber.append(f"«{data['tittel']}»")
     utskrevet.append(d["dato"])
     lagre(plan)
-    return f"Skrev ut «{data['tittel']}» på {skriver or 'standardskriveren'}. {r.stdout.strip()}"
+    return f"Skrev ut {' og '.join(jobber)} på {skriver or 'standardskriveren'}."

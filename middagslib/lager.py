@@ -43,7 +43,7 @@ def _finn_indeks(varer, navn):
     return None
 
 
-def legg_til(navn: str, mengde: str = None, fryst_middag_porsjoner: int = None, notat: str = None) -> dict:
+def legg_til(navn: str, mengde: str = None, fryst_middag_porsjoner: int = None, notat: str = None, sjekk: bool = False) -> dict:
     """Legg til eller oppdater en vare. Samme navn overskriver mengden."""
     varer = last()
     ny = {"navn": navn.strip(), "mengde": mengde, "lagt_til": dt.date.today().isoformat()}
@@ -51,6 +51,8 @@ def legg_til(navn: str, mengde: str = None, fryst_middag_porsjoner: int = None, 
         ny.update({"fryst_middag": True, "porsjoner": int(fryst_middag_porsjoner), "mengde": None})
     if notat:
         ny["notat"] = notat
+    if sjekk:
+        ny["sjekk"] = True
     i = _finn_indeks(varer, navn)
     if i is None:
         varer.append(ny)
@@ -77,7 +79,9 @@ def tom() -> int:
 
 
 def ferdigmiddager(varer=None) -> list:
-    return [v for v in (varer if varer is not None else last()) if v.get("fryst_middag") and v.get("porsjoner", 0) > 0]
+    # Ubekreftede (sjekk) regnes ikke med før Ole har sagt at de faktisk ligger i fryseren
+    return [v for v in (varer if varer is not None else last())
+            if v.get("fryst_middag") and v.get("porsjoner", 0) > 0 and not v.get("sjekk")]
 
 
 def bruk_ferdigmiddag(navn: str, porsjoner: int) -> None:
@@ -184,10 +188,10 @@ def til_sjekk(idag: dt.date = None) -> list:
     """Varer Ole bør bekrefte: ferskvare forbi holdbarhet, og varer merket etter bruk."""
     ut = []
     for v in last():
-        if v.get("fryst_middag"):
-            continue
         if v.get("sjekk"):
             ut.append((v["navn"], v.get("notat") or "brukt – sjekk om noe er igjen"))
+        elif v.get("fryst_middag"):
+            continue
         elif _kan_bli_gammel(v) and alder(v, idag) >= holdbar(v):
             ut.append((v["navn"], f"lagt inn for {alder(v, idag)} dager siden"))
     return ut
@@ -202,7 +206,7 @@ def ok(navn: str) -> bool:
     v = varer[i]
     v["lagt_til"] = dt.date.today().isoformat()
     v.pop("sjekk", None)
-    if (v.get("notat") or "").startswith("brukt"):
+    if (v.get("notat") or "").startswith(("brukt", "ekstra middag")):
         v.pop("notat")
     lagre(varer)
     return True
@@ -226,12 +230,12 @@ def tekst(varer=None) -> str:
     if not varer:
         return "Lageret er tomt. Legg til med: lager legg-til <vare> [--mengde \"500 g\"]"
     vanlige = sorted((v for v in varer if not v.get("fryst_middag")), key=lambda v: norm(v["navn"]))
-    frys = ferdigmiddager(varer)
+    frys = [v for v in varer if v.get("fryst_middag") and v.get("porsjoner", 0) > 0]
     linjer = ["*Hjemme*"]
     for v in vanlige:
         linjer.append(f"  • {v['navn']}" + (f" ({v['mengde']})" if v.get("mengde") else "") + (" ❓" if v.get("sjekk") else ""))
     if frys:
         linjer.append("*Ferdigmiddager i fryseren*")
         for v in frys:
-            linjer.append(f"  • {v['navn']} – {v['porsjoner']} porsjoner")
+            linjer.append(f"  • {v['navn']} – {v['porsjoner']} porsjoner" + (" ❓ ikke bekreftet" if v.get("sjekk") else ""))
     return "\n".join(linjer)

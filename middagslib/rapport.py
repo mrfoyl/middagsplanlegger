@@ -56,7 +56,8 @@ def plan(plan_: dict, liste: dict) -> str:
         for x in plan_["ekstra_middager"]:
             tid = f", {x['minutter']} min" if x.get("minutter") else ""
             lenke = f" – {x['url']}" if x.get("url") else ""
-            linjer.append(f"  {x['navn']}{tid} [{x['ref']}]{lenke}")
+            dag = f" – lages {x['lagedag']}" if x.get("lagedag") else ""
+            linjer.append(f"  {x['navn']}{tid}{dag} [{x['ref']}]{lenke}")
     linjer.append("")
     linjer.append(handleliste(liste))
     if plan_.get("bytter"):
@@ -67,14 +68,18 @@ def plan(plan_: dict, liste: dict) -> str:
     if plan_.get("ekstra"):
         ekstra_sum = sum(x["antall"] * x.get("pris", 0) for x in plan_["ekstra"])
         linjer.append("*Ekstra (utenom rettene)*")
-        linjer += [f"  {x['antall']}× {x['navn']}" for x in plan_["ekstra"]]
+        linjer += [f"  {x['antall']}× {x['navn']}" + (" ❓" if x.get("sjekk") else "") for x in plan_["ekstra"]]
+        sporsmal = [x for x in plan_["ekstra"] if x.get("sjekk")]
+        if sporsmal:
+            linjer.append("*❓ Faste varer – trenger dere dem denne uken?* (svar «har» eller «kjøp»)")
+            linjer += [f"  • {x['navn']} – {x['sjekk']}" for x in sporsmal]
         linjer.append(f"*Totalsum inkl. faste varer*: ca {_kr(liste['sum'] + ekstra_sum)}")
     if plan_.get("advarsler"):
         linjer.append("")
         linjer.append("*Merk*")
         linjer += [f"  ⚠️ {a}" for a in plan_["advarsler"]]
     linjer.append("")
-    if liste["usikre"]:
+    if liste["usikre"] or any(x.get("sjekk") for x in plan_.get("ekstra", [])):
         linjer.append("Neste steg: svar på spørsmålene over (plan avklar <vare> har|kjop).")
     elif plan_["status"] == "utkast":
         linjer.append("Neste steg: ser planen bra ut? Da godkjenner jeg den og viser hva som legges i kurven.")

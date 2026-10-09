@@ -321,6 +321,67 @@ class TestPlan(MedData):
         plan = planlegger.lag(self.oda, p, UKE)
         self.assertTrue(plan["ekstra_middager"])
 
+    def test_faste_varer_sjekkes_mot_lager(self):
+        lager.legg_til("lettmelk")
+        p = profil.fast_vare(8143, "Tine Lettmelk 1% fett 1,75l", 1, 31.9)
+        p = profil.fast_vare(1222, "Libero buksebleie Str. 6", 2, 75.4)
+        plan = planlegger.lag(self.oda, p, UKE)
+        ekstra = {x["id"]: x for x in plan["ekstra"]}
+        self.assertIn("sjekk", ekstra[8143])
+        self.assertNotIn("sjekk", ekstra[1222])
+        for u in planlegger.handleliste_for(self.oda, plan, p)["usikre"]:
+            planlegger.avklar(self.oda, plan, p, u["tittel"], "har")
+        with self.assertRaisesRegex(ValueError, "faste varene"):
+            planlegger.godkjenn(self.oda, plan, p)
+        self.assertNotIn(8143, [l["linje"]["produkt"]["id"] for l in planlegger.kurvplan(self.oda, plan, p)["linjer"]])
+        planlegger.avklar(self.oda, plan, p, "lettmelk", "har")
+        self.assertNotIn(8143, [x["id"] for x in plan["ekstra"]])
+        planlegger.godkjenn(self.oda, plan, p)
+
+    def test_fast_vare_kjop_beholdes(self):
+        lager.legg_til("kefir")
+        p = profil.fast_vare(64625, "Q Kefir Naturell 1000g", 1, 31.7)
+        plan = planlegger.lag(self.oda, p, UKE)
+        planlegger.avklar(self.oda, plan, p, "kefir", "kjop")
+        self.assertEqual([x for x in plan["ekstra"] if x["id"] == 64625][0].get("sjekk"), None)
+
+    def test_planens_egne_varer_i_kurven_telles_ikke_mot_minstebelop(self):
+        # Samme plan lages på nytt mens forrige runde fortsatt ligger i kurven:
+        # de varene skal ikke få planen til å tro at den er over grensen.
+        p = profil.sett("min_bestilling_kr", "2500")
+        forste = planlegger.lag(self.oda, p, UKE)
+        egen = planlegger.handleliste_for(self.oda, forste, p)["kjop"][0]["produkt"]["id"]
+        self.oda.kurv_innhold = {egen: 1}
+        self.oda.kurv_overstyring = {"discounted_display_price": 5000}
+        self.oda.kurv = lambda: {"items": [{"id": egen, "quantity": 1, "discounted_line_total": 5000}], "discounted_display_price": 5000}
+        plan = planlegger.lag(self.oda, p, UKE)
+        self.assertTrue(plan["ekstra_middager"])
+
+    def test_ekstra_middag_har_lagedag_historikk_og_skrives_ut(self):
+        import datetime as dt
+        from middagslib import utskrift
+        p = profil.sett("min_bestilling_kr", "100000")
+        plan = planlegger.lag(self.oda, p, UKE)
+        x = plan["ekstra_middager"][0]
+        self.assertIn(x["lagedag"], [d["dag"] for d in plan["dager"] if d["type"] == "lag"])
+        planlegger._lagre_historikk(plan)
+        self.assertIn(x["ref"], planlegger.nylig_brukt("2026-W43"))
+        plan["status"] = "i_kurv"
+        dato = dt.date.fromisoformat([d["dato"] for d in plan["dager"] if d["dag"] == x["lagedag"]][0])
+        melding = utskrift.skriv_ut(self.oda, plan, dato, bare_fil=True)
+        self.assertEqual(melding.count(".txt") + melding.count(".pdf"), 1 + sum(1 for e in plan["ekstra_middager"] if e["lagedag"] == x["lagedag"]))
+
+    def test_ekstra_middag_i_fryseren_maa_bekreftes(self):
+        p = profil.sett("min_bestilling_kr", "100000")
+        plan = planlegger.lag(self.oda, p, UKE)
+        plan["status"] = "i_kurv"
+        planlegger.ferdig(self.oda, plan, p)
+        navn = plan["ekstra_middager"][0]["navn"]
+        self.assertNotIn(navn, [v["navn"] for v in lager.ferdigmiddager()])
+        self.assertIn(navn, [n for n, _ in lager.til_sjekk()])
+        lager.ok(navn)
+        self.assertIn(navn, [v["navn"] for v in lager.ferdigmiddager()])
+
     def test_ferdig_legger_ekstra_middag_i_fryseren(self):
         p = profil.sett("min_bestilling_kr", "100000")
         plan = planlegger.lag(self.oda, p, UKE)
@@ -330,9 +391,12 @@ class TestPlan(MedData):
         meldinger = planlegger.ferdig(self.oda, plan, p)
         for x in plan["ekstra_middager"]:
             self.assertTrue(any(x["navn"] in m for m in meldinger))
-        fryste_navn = {v["navn"] for v in lager.ferdigmiddager()}
+        # Registreres i fryseren, men teller først som ferdigmiddag når Ole har bekreftet den
+        fryste_navn = {v["navn"] for v in lager.last() if v.get("fryst_middag")}
         for x in plan["ekstra_middager"]:
             self.assertIn(x["navn"], fryste_navn)
+            lager.ok(x["navn"])
+        self.assertTrue({x["navn"] for x in plan["ekstra_middager"]} <= {v["navn"] for v in lager.ferdigmiddager()})
 
 
 class TestKurvflyt(MedData):

@@ -190,6 +190,19 @@ class Oda:
             return kurv["discounted_display_price"]
         return kurv.get("display_price") or 0.0
 
+    @staticmethod
+    def belop_etter_rabatt_uten(kurv: dict, ider) -> float:
+        """Som belop_etter_rabatt, men uten linjene for produktene i `ider`.
+
+        Brukes av minstebeløp-sjekken: varer som planen selv skal legge i kurven
+        (f.eks. fra en tidligere runde av samme plan) skal ikke telles to ganger.
+        """
+        total = Oda.belop_etter_rabatt(kurv)
+        for x in kurv.get("items", []):
+            if x.get("id") in ider:
+                total -= x.get("discounted_line_total", x.get("line_total", 0)) or 0
+        return max(0.0, total)
+
     def lister(self) -> list:
         return self._json(["list", "all"])
 

@@ -13,9 +13,18 @@ fi
 cd vendor/mcp-oda
 if ! git rev-parse --verify -q middag >/dev/null; then
   git checkout -q -b middag "$PIN"
-  git -c user.name=middag -c user.email=middag@localhost am -q ../../patches/*.patch
 fi
 git checkout -q middag
+# Legg på patcher som mangler. En patch regnes som lagt på hvis den kan
+# reverseres rent – da fungerer dette også på eksisterende installasjoner
+# når nye patcher kommer til i patches/.
+for patch in ../../patches/*.patch; do
+  if git apply --reverse --check "$patch" 2>/dev/null; then
+    continue
+  fi
+  echo "Legger på $(basename "$patch")"
+  git -c user.name=middag -c user.email=middag@localhost am -q "$patch"
+done
 npm ci --no-audit --no-fund
 npm run build
 echo "mcp-oda klar: $(pwd)/dist/index.js"

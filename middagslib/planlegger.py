@@ -195,7 +195,8 @@ def nylig_brukt(uke: str, antall_uker: int = 3) -> set:
 
 def _lagre_historikk(plan: dict) -> None:
     h = lagring.les(HISTORIKK, {})
-    h[plan["uke"]] = sorted({d["ref"] for d in plan["dager"] if d.get("ref") and d["type"] in ("lag", "lag_dobbel")})
+    h[plan["uke"]] = sorted({d["ref"] for d in plan["dager"] if d.get("ref") and d["type"] in ("lag", "lag_dobbel")}
+                            | {x["ref"] for x in plan.get("ekstra_middager", [])})
     lagring.skriv(HISTORIKK, h)
 
 
@@ -337,7 +338,7 @@ def lag(oda, p: dict, uke: str, ekstra_aktivitet=(), kalenderdager=(), onsket=()
         "advarsler": advarsler,
         "kurvlogg": [],
         "bytter": {},
-        "ekstra": [dict(x) for x in p.get("faste_varer", [])],
+        "ekstra": faste_varer(p, lagermod.last()),
         "ekstra_middager": [],
     }
     lagre(plan)
@@ -368,13 +369,37 @@ def optimaliser_priser(oda, plan: dict, p: dict, logg=lambda *_: None) -> list:
     return list(nye.values())
 
 
+def faste_varer(p: dict, lagervarer: list) -> list:
+    """Profilens faste ukevarer. Finnes noe som ligner i lageret, spør vi før de kjøpes."""
+    ut = []
+    for x in p.get("faste_varer", []):
+        e = dict(x)
+        grad, v = lagermod.treff(lagervarer, x["navn"])
+        if grad:
+            mengde = f" ({v['mengde']})" if v.get("mengde") else ""
+            e["sjekk"] = f"lageret har «{v['navn']}»{mengde} – trenger dere mer?"
+        ut.append(e)
+    return ut
+
+
+def _velg_lagedag(plan: dict) -> str:
+    """Dag å lage en ekstra fryse-middag: den raskeste vanlige middagen i uken."""
+    vanlige = [d for d in plan["dager"] if d["type"] == "lag" and not d.get("aktivitet")]
+    if not vanlige:
+        vanlige = [d for d in plan["dager"] if d["type"] in ("lag", "lag_dobbel")]
+    if not vanlige:
+        return plan["dager"][-1]["dag"]
+    return min(vanlige, key=lambda d: (d.get("minutter") or 99, -_indeks(d["dag"])))["dag"]
+
+
 def sikre_minstebelop(oda, plan: dict, p: dict, maks_kandidater: int = 30, logg=lambda *_: None) -> list:
     """Legg til ekstra frysbare middager hvis handlelisten (+ det som allerede ligger i kurven)
     havner under Oda sitt minstebeløp, så vi slipper tillegget for mindre bestillinger."""
     grense = p.get("min_bestilling_kr") or 1300
+    egne_ider = {x["produkt"]["id"] for x in handleliste_for(oda, plan, p)["kjop"]} | {x["id"] for x in plan.get("ekstra", [])}
     try:
         oda.sikre_innlogget()
-        i_kurv = Oda.belop_etter_rabatt(oda.kurv())
+        i_kurv = Oda.belop_etter_rabatt_uten(oda.kurv(), egne_ider)
     except OdaFeil as e:
         logg(f"Fant ikke kurven for minstebeløp-sjekk: {e}")
         i_kurv = 0
@@ -403,6 +428,7 @@ def sikre_minstebelop(oda, plan: dict, p: dict, maks_kandidater: int = 30, logg=
         plan.setdefault("ekstra_middager", []).append({
             "ref": r["ref"], "navn": r["navn"], "porsjoner": plan["porsjoner"],
             "minutter": r.get("minutter"), "url": r.get("url", ""), "frysbar": True,
+            "lagedag": _velg_lagedag(plan),
         })
         lagt_til.append(r["navn"])
 
@@ -474,6 +500,9 @@ def godkjenn(oda, plan: dict, p: dict) -> dict:
     if liste["usikre"]:
         navn = ", ".join(u["tittel"] for u in liste["usikre"])
         raise ValueError(f"Avklar først: {navn}. Bruk: plan avklar <vare> har|kjop")
+    faste_sporsmal = [x["navn"] for x in plan.get("ekstra", []) if x.get("sjekk")]
+    if faste_sporsmal:
+        raise ValueError(f"Avklar først de faste varene: {', '.join(faste_sporsmal)}. Bruk: plan avklar <vare> har|kjop")
     mangler = [d["dag"] for d in plan["dager"] if d["type"] == "mangler"]
     if mangler:
         raise ValueError(f"Dager uten middag: {', '.join(mangler)}. Bruk plan bytt <dag> <oppskrift> eller plan fri <dag>.")
@@ -575,6 +604,16 @@ def avklar(oda, plan: dict, p: dict, vare: str, svar: str) -> dict:
     svar = {"ja": "har", "har": "har", "nei": "kjop", "kjøp": "kjop", "kjop": "kjop"}.get(svar.lower())
     if not svar:
         raise ValueError("Svar må være 'har' eller 'kjop'.")
+    s = lagermod.stamme(vare)
+    for x in list(plan.get("ekstra", [])):
+        if x.get("sjekk") and s and (s in lagermod.stamme(x["navn"]) or lagermod.stamme(x["navn"]) in s):
+            if svar == "har":
+                plan["ekstra"].remove(x)
+            else:
+                x.pop("sjekk")
+            _endret(plan)
+            lagre(plan)
+            return {"tittel": x["navn"]}
     liste = handleliste_for(oda, plan, p)
     nokkel, linje = handleliste.finn_nokkel(liste, vare)
     if not nokkel:
@@ -635,7 +674,7 @@ def kurvplan(oda, plan: dict, p: dict, trekk_fra_kurv: bool = False) -> dict:
     i_kurv = {x["id"]: x["quantity"] for x in kurv.get("items", [])}
     allerede_lagt = {x["id"] for logg in plan.get("kurvlogg", []) for x in logg["lagt"]} if plan["status"] == "delvis_i_kurv" else set()
     linjer, hoppet_over = [], []
-    for x in liste["kjop"] + [_ekstralinje(e) for e in plan.get("ekstra", [])]:
+    for x in liste["kjop"] + [_ekstralinje(e) for e in plan.get("ekstra", []) if not e.get("sjekk")]:
         pid = x["produkt"]["id"]
         antall = x["antall"]
         if pid in allerede_lagt:
@@ -728,8 +767,9 @@ def ferdig(oda, plan: dict, p: dict) -> list:
             lagermod.legg_til(d["navn"], fryst_middag_porsjoner=d["porsjoner"], notat=f"laget {d['dato']}")
             meldinger.append(f"I fryseren: {d['navn']} ({d['porsjoner']} porsjoner)")
     for x in plan.get("ekstra_middager", []):
-        lagermod.legg_til(x["navn"], fryst_middag_porsjoner=x["porsjoner"], notat=f"ekstra middag, laget uke {plan['uke']}")
-        meldinger.append(f"I fryseren: {x['navn']} ({x['porsjoner']} porsjoner, ekstra)")
+        lagermod.legg_til(x["navn"], fryst_middag_porsjoner=x["porsjoner"], sjekk=True,
+                          notat=f"ekstra middag fra {plan['uke']} – bekreft at den ble laget og fryst (lager ok)")
+        meldinger.append(f"Ekstra middag {x['navn']} ({x['porsjoner']} porsjoner): bekreft at den ligger i fryseren med «lager ok {x['navn']}»")
     plan["status"] = "ferdig"
     lagre(plan)
     return meldinger

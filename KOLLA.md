@@ -38,6 +38,13 @@ Utskriften er WhatsApp-formatert og kan sendes rett til Ole.
      annen variant, sammenlignet på faktisk behov). Byttene står under «Byttet til
      rimeligere». Vil Ole ha originalen: `plan original <vare>`. `plan billigst`
      kjører prissjekken på nytt.
+   - Faste ukevarer (bleier, melk …) legges til hver plan. Ligner en av dem noe i
+     lageret, får den ❓. Spør Ole og svar med `plan avklar <vare> har|kjop`.
+     Svaret «har» tar varen ut av denne ukas handel.
+   - Når planen legger til en ekstra fryse-middag for å nå minstebeløpet, står det
+     hvilken dag den skal lages. Oppskriften skrives ut den dagen. Når uka er
+     slutt, ligger den i fryseren med ❓ til Ole bekrefter med
+     `lager ok <navn>`. Først da brukes den på en aktivitetsdag.
 3. Når Ole sier at planen ser bra ut: `plan godkjenn`. Det viser hva som legges
    i kurven («før»). Send det til Ole.
 4. Når Ole sier «legg i kurven» eller lignende: `plan kurv --utfor`. Send «etter»-
