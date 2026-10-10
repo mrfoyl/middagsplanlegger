@@ -113,9 +113,8 @@ ikke godkjennes før alt er besvart.
 Kølla skal stille disse som **vanlig melding med nummerert liste**, ikke med
 openclaw sitt spørsmålsverktøy. Det verktøyet krever ett svar per linje og at
 hvert svar matcher et alternativ. Ett ubesvart spørsmål avviser hele svaret, og
-Ole blir sittende fast. Står et slikt spørsmål fast, skal `/stop` i WhatsApp
-avbryte kjøringen og spørsmålet med den. Ifølge openclaw-koden kanselleres
-spørsmålet når kjøringen som stilte det, stopper. Det er ikke testet her.
+Ole blir sittende fast. Står et slikt spørsmål fast, send `/stop` i WhatsApp. Det avbryter
+kjøringen, og spørsmålet kanselleres med den (testet 2026-10-10).
 
 ### Prisbytter
 
