@@ -1,6 +1,8 @@
 """Tekst for WhatsApp: *fet* skrift, korte linjer, norsk."""
 import datetime as dt
 
+from . import matvarer
+
 from .oda import Oda
 
 STATUS = {"utkast": "utkast – ikke godkjent", "godkjent": "godkjent – klar for kurv", "i_kurv": "lagt i Oda-kurven", "delvis_i_kurv": "delvis lagt i kurven – noe feilet", "ferdig": "ferdig"}
@@ -45,7 +47,8 @@ def dagslinje(d: dict) -> str:
 
 def plan(plan_: dict, liste: dict) -> str:
     dager = plan_["dager"]
-    linjer = [f"*Middagsplan {plan_['uke']}* ({_dato(dager[0]['dato'])}–{_dato(dager[-1]['dato'])}), {plan_['porsjoner']} porsjoner – {STATUS.get(plan_['status'], plan_['status'])}"]
+    modus = " – *sparemodus*" if plan_.get("modus") == "spar" else ""
+    linjer = [f"*Middagsplan {plan_['uke']}* ({_dato(dager[0]['dato'])}–{_dato(dager[-1]['dato'])}), {plan_['porsjoner']} porsjoner{modus} – {STATUS.get(plan_['status'], plan_['status'])}"]
     linjer += [dagslinje(d) for d in dager]
     lenker = [(d["dag"], d["navn"], d["url"]) for d in dager if d.get("url") and d["type"] in ("lag", "lag_dobbel")]
     if lenker:
@@ -64,7 +67,13 @@ def plan(plan_: dict, liste: dict) -> str:
         spart = sum(b["spart"] for b in plan_["bytter"].values())
         linjer.append(f"*Byttet til rimeligere* (sparer ca {_kr(spart)}, angre med «plan original <vare>»)")
         for b in plan_["bytter"].values():
-            linjer.append(f"  • {b['tittel']}: {b['til']} i stedet for {b['fra']} (−{_kr(b['spart'])})")
+            if b.get("holdbar"):
+                pris = f"−{_kr(b['spart'])}" if b["spart"] >= 0 else f"+{_kr(-b['spart'])}"
+                linjer.append(f"  • {b['tittel']}: {b['til']} i stedet for {b['fra']} (holder lenger, {pris})")
+            else:
+                linjer.append(f"  • {b['tittel']}: {b['til']} i stedet for {b['fra']} (−{_kr(b['spart'])})")
+    if plan_.get("modus") == "spar":
+        linjer += sparoversikt(plan_, liste)
     if plan_.get("ekstra"):
         ekstra_sum = sum(x["antall"] * x.get("pris", 0) for x in plan_["ekstra"])
         linjer.append("*Ekstra (utenom rettene)*")
@@ -84,6 +93,26 @@ def plan(plan_: dict, liste: dict) -> str:
     elif plan_["status"] == "utkast":
         linjer.append("Neste steg: ser planen bra ut? Da godkjenner jeg den og viser hva som legges i kurven.")
     return "\n".join(linjer)
+
+
+def sparoversikt(plan_: dict, liste: dict) -> list:
+    """Kr per porsjon og hva som ikke holder to uker uten å fryses."""
+    porsjoner = sum(d["porsjoner"] * (2 if d["type"] == "lag_dobbel" else 1) for d in plan_["dager"] if d["type"] in ("lag", "lag_dobbel"))
+    porsjoner += sum(x["porsjoner"] for x in plan_.get("ekstra_middager", []))
+    linjer = ["*Sparemodus*"]
+    if porsjoner:
+        linjer.append(f"  Ca {_kr(liste['sum'] / porsjoner)} per porsjon for middagsvarene ({porsjoner} porsjoner).")
+    korte = [x for x in liste["kjop"]
+             if matvarer.holdbarhet_uapnet(x["tittel"], (x.get("produkt") or {}).get("full_name", "")) < matvarer.SPAR_MIN_DAGER]
+    frys = [x["tittel"] for x in korte if matvarer.fryseerstattbar(x["tittel"])]
+    ikke = [x["tittel"] for x in korte if not matvarer.fryseerstattbar(x["tittel"])]
+    if frys:
+        linjer.append("  Frys ned ved levering: " + ", ".join(frys))
+    if ikke:
+        linjer.append("  Holder ikke to uker (bruk tidlig i uken): " + ", ".join(ikke))
+    if not frys and not ikke:
+        linjer.append("  Alt holder minst to uker.")
+    return linjer
 
 
 def handleliste(liste: dict) -> str:

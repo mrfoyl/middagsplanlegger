@@ -181,7 +181,9 @@ def cmd_plan(a):
             kalenderdager, melding = kalender.aktivitetsdager(uke, p["kalender"]["sokeord"])
             print(melding)
         onsket = [r for r in (a.oppskrifter or "").split(",") if r.strip()]
-        plan = planlegger.lag(oda, p, uke, ekstra, kalenderdager, onsket, a.maks_kandidater, logg=lambda m: print(m, file=sys.stderr))
+        spar = a.spar or (p.get("sparemodus") and not a.vanlig)
+        plan = planlegger.lag(oda, p, uke, ekstra, kalenderdager, onsket, a.maks_kandidater,
+                              logg=lambda m: print(m, file=sys.stderr), spar=bool(spar))
         _vis_plan(oda, plan, p)
         return
 
@@ -317,6 +319,8 @@ def parser():
     spl.add_argument("--aktivitet", help="ekstra aktivitetsdager denne uken, f.eks. tir,tor")
     spl.add_argument("--oppskrifter", help="ønskede retter, f.eks. oda:3004,egen:taco")
     spl.add_argument("--maks-kandidater", type=int, default=30)
+    spl.add_argument("--spar", action="store_true", help="sparemodus: spesielt billige middager med varer som holder i to uker")
+    spl.add_argument("--vanlig", action="store_true", help="vanlig modus selv om sparemodus er standard i profilen")
     spl.add_argument("--utfor", action="store_true", help="legg faktisk i kurven (krever godkjent plan)")
     spl.add_argument("--trekk-fra-kurv", action="store_true", help="ikke legg til det som allerede ligger i kurven")
     spl.add_argument("--navn")

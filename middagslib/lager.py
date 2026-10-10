@@ -107,7 +107,8 @@ def treff(varer: list, *navn: str):
         if v.get("fryst_middag"):
             continue
         s = stamme(v["navn"])
-        if any(s == k for k in kandidater):
+        # Samme ord i annen rekkefølge ("rød paprika" / "paprika, rød") er samme vare
+        if any(s == k or sorted(s.split()) == sorted(k.split()) for k in kandidater):
             return "sikker", v
         if beste[0] is None and any(_ligner(s, k) for k in kandidater):
             beste = ("usikker", v)

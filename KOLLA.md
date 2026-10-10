@@ -21,6 +21,8 @@ Utskriften er WhatsApp-formatert og kan sendes rett til Ole.
    - `--aktivitet tir,tor` for ekstra aktivitetsdager denne uken
    - `--oppskrifter oda:3004,egen:taco` hvis Ole ønsker bestemte retter
    - `--uke 2026-W43` for en annen uke
+   - Ber Ole om «billig uke», «spareuke» eller mat som holder lenge, bruk
+     `--spar`. Si fra hva som bør fryses ved levering (står i planen).
 2. Send planen til Ole. Gjør endringene Ole ber om:
    - `plan bytt <dag> <ref>` setter en annen rett. `oppskrift sok <ord>` gir
      forslag.

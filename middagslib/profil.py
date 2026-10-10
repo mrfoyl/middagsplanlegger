@@ -23,17 +23,19 @@ STANDARD = {
     "maks_tid_aktivitetsdag_min": 20,
     "porsjoner": None,
     "barnevennlig": True,
+    "sparemodus": False,
     "skriver": "Brother-HL-L2400DW",
     "whatsapp": None,
     "alltid_hjemme": ["salt", "havsalt", "pepper", "olje", "rapsolje", "olivenolje", "stekeolje", "sukker", "hvetemel", "vann"],
     "faste_varer": [],
     "min_bestilling_kr": 1300,
+    "maks_ekstra_middager": 2,
 }
 
 # Felter som er lister og kan endres med legg-til / fjern
 LISTEFELT = {"allergier", "unngaa", "liker", "middagsdager", "aktivitetsdager", "alltid_hjemme"}
-TALLFELT = {"maks_tid_min", "maks_tid_aktivitetsdag_min", "porsjoner", "min_bestilling_kr"}
-BOOLFELT = {"barnevennlig"}
+TALLFELT = {"maks_tid_min", "maks_tid_aktivitetsdag_min", "porsjoner", "min_bestilling_kr", "maks_ekstra_middager"}
+BOOLFELT = {"barnevennlig", "sparemodus"}
 TEKSTFELT = {"skriver", "whatsapp"}
 
 
@@ -194,6 +196,7 @@ def tekst(p: dict) -> str:
     linjer.append(f"Kalender: {'på' if kal['aktiv'] else 'av'}" + (f" (søkeord: {', '.join(kal['sokeord'])})" if kal["sokeord"] else ""))
     linjer.append(f"Maks tid: {p['maks_tid_min']} min, aktivitetsdag: {p['maks_tid_aktivitetsdag_min']} min")
     linjer.append(f"Barnevennlig (unngå sterkt): {'ja' if p['barnevennlig'] else 'nei'}")
+    linjer.append(f"Sparemodus som standard (billig, holder 2 uker): {'ja' if p.get('sparemodus') else 'nei'}")
     linjer.append(f"Skriver for oppskrifter: {p.get('skriver') or 'standardskriveren'}")
     linjer.append(f"Alltid hjemme: {', '.join(p['alltid_hjemme'])}")
     faste = p.get("faste_varer", [])

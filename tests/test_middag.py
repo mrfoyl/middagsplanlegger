@@ -47,6 +47,8 @@ class FalskOda:
         return {"name": "x", "description": "En god rett.", "ingredients": [], "instructions": ["Stek kjøttet.", "Server."]}
 
     def oppskrift(self, oid):
+        if not (FIX / f"recipe_{oid}.json").exists():
+            raise OdaFeil(f"Fant ikke oppskrift {oid}")  # som den ekte klienten
         return fixture_oppskrift(oid)
 
     def kurv(self):
@@ -642,6 +644,51 @@ class TestLagerHoldbarhet(MedData):
         lager.ok("risnudler")
         self.assertEqual(lager.til_sjekk(), [])
         self.assertEqual(lager.sjekkmelding([], []), "")
+
+
+class TestSparemodus(MedData):
+    def test_holdbarhet_for_sparemodus(self):
+        self.assertGreaterEqual(matvarer.holdbarhet("Makaroni", "Sopps Makaroni snarkokt"), 90)  # ikke sopp
+        self.assertGreaterEqual(matvarer.holdbarhet_uapnet("Kokosmelk"), 365)
+        self.assertGreaterEqual(matvarer.holdbarhet_uapnet("Kremfløte", "TINE Kremfløte 3 dl"), 14)
+        self.assertLess(matvarer.holdbarhet("Kremfløte"), 14)  # åpnede rester regnes fortsatt som ferskvare
+        self.assertGreaterEqual(matvarer.holdbarhet_uapnet("Kyllingfilet", "Kyllingfilet fryst 1 kg"), 14)
+        self.assertTrue(matvarer.fryseerstattbar("Kyllingfilet, strimlet"))
+        self.assertFalse(matvarer.fryseerstattbar("Bladpersille"))
+
+    def test_spar_egnet(self):
+        self.assertTrue(matvarer.spar_egnet(self.r(499)))     # søtpotetsuppe med bacon
+        self.assertFalse(matvarer.spar_egnet(self.r(4823)))   # mango, avokado, koriander
+
+    def test_sparplan_velger_bare_holdbare_retter(self):
+        plan = planlegger.lag(self.oda, self.p, UKE, spar=True)
+        self.assertEqual(plan["modus"], "spar")
+        retter = planlegger.retter(self.oda, plan)
+        self.assertTrue(retter)
+        for r, _ in retter:
+            self.assertTrue(matvarer.spar_egnet(r), r["navn"])
+        tekst = __import__("middagslib.rapport", fromlist=["x"]).plan(plan, planlegger.handleliste_for(self.oda, plan, self.p))
+        self.assertIn("sparemodus", tekst)
+        self.assertIn("per porsjon", tekst)
+
+    def test_fersk_byttes_til_fryst_i_sparemodus(self):
+        self.oda.produkter["kyllingfilet fryst"] = [_treff(950, "Kyllingfilet strimlet fryst", "500 g", 109.0)]
+        plan = planlegger.lag(self.oda, self.p, UKE, onsket=["3004"], spar=True)
+        b = [b for b in plan["bytter"].values() if b["tittel"] == "Kyllingfilet, strimlet"]
+        self.assertEqual(len(b), 1)
+        self.assertTrue(b[0]["holdbar"])
+        self.assertLess(b[0]["spart"], 0)  # litt dyrere, men holder
+
+    def test_fryst_ikke_byttet_i_vanlig_modus(self):
+        self.oda.produkter["kyllingfilet fryst"] = [_treff(950, "Kyllingfilet strimlet fryst", "500 g", 109.0)]
+        self.oda.produkter["kyllingfilet strimlet"] = [_treff(951, "Kyllingfilet strimlet fryst", "500 g", 60.0)]
+        plan = planlegger.lag(self.oda, self.p, UKE, onsket=["3004"])
+        self.assertFalse([b for b in plan["bytter"].values() if b["tittel"] == "Kyllingfilet, strimlet"])
+
+    def test_for_dyr_fryst_variant_byttes_ikke(self):
+        self.oda.produkter["kyllingfilet fryst"] = [_treff(952, "Kyllingfilet strimlet fryst", "500 g", 199.0)]
+        plan = planlegger.lag(self.oda, self.p, UKE, onsket=["3004"], spar=True)
+        self.assertFalse([b for b in plan["bytter"].values() if b["tittel"] == "Kyllingfilet, strimlet"])
 
 
 class TestEgneOppskrifter(MedData):

@@ -24,6 +24,8 @@ CACHE_TIMER = 24
 MIN_SPARING_KR = 3.0
 MIN_SPARING_ANDEL = 0.05
 MAKS_KANDIDATER = 24
+SPAR_MERPRIS = 0.15  # i sparemodus: betal opptil 15 % mer for en variant som holder to uker
+FRYSEORD = ("frossen", "fryst", "frosne")
 
 # Ord som gjør varen til noe annet enn originalen
 ANNEN_VARIANT = (
@@ -32,6 +34,12 @@ ANNEN_VARIANT = (
     "arrabbiata", "pesto", "chili", "hot", "sterk", "jalapeño", "hvitløk", "ost", "oster", "barnemat",
     "lettsaltet", "laktosefri", "glutenfri", "vegansk", "vegetar", "plantebasert", "snack", "dressing",
     "pulver", "mix", "smak", "saus", "lett", "light", "mager", "sukkerfri", "proteinrik",
+    "sandwich", "knekkebrød", "kjeks", "chips", "syltet", "sylte", "skivede", "hakket", "hakkede",
+)
+# Hvis originalen nevner en av disse og kandidaten en annen fra samme gruppe, er det en annen vare
+EKSKLUSIVE_GRUPPER = (
+    ("storfe", "svin", "kylling", "lam", "kalkun", "hjort", "elg", "reinsdyr", "okse"),
+    ("rød", "røde", "grønn", "grønne", "gul", "gule", "sort", "sorte", "hvit", "hvite", "brun", "brune"),
 )
 
 
@@ -69,7 +77,7 @@ def _hent_sok(oda, sok: str) -> dict:
     return data
 
 
-def _passer(kandidat: dict, original: dict, tittel: str, profil: dict) -> bool:
+def _passer(kandidat: dict, original: dict, tittel: str, profil: dict, tillat_fryst: bool = False) -> bool:
     if not kandidat.get("availability", {}).get("is_available", True):
         return False
     tekst = f"{kandidat.get('name', '')} {kandidat.get('subtitle', '')}"
@@ -78,7 +86,14 @@ def _passer(kandidat: dict, original: dict, tittel: str, profil: dict) -> bool:
     if hoved and not _har_hovedord(tekst, hoved, orig_tekst):
         return False
     for o in ANNEN_VARIANT:
+        if tillat_fryst and o in FRYSEORD:
+            continue
         if matvarer.inneholder(tekst, o) and not matvarer.inneholder(orig_tekst, o):
+            return False
+    for gruppe in EKSKLUSIVE_GRUPPER:
+        orig_har = {o for o in gruppe if matvarer.inneholder(orig_tekst, o)}
+        kand_har = {o for o in gruppe if matvarer.inneholder(tekst, o)}
+        if orig_har and kand_har and not (orig_har & kand_har):
             return False
     if matvarer.allergen_treff(tekst, profil.get("allergier", []), profil.get("unngaa", [])):
         return False
@@ -102,8 +117,12 @@ def som_produkt(kandidat: dict) -> dict:
     }
 
 
-def finn(oda, liste: dict, profil: dict, hopp_over=(), logg=lambda *_: None) -> dict:
-    """{nokkel: {"produkt", "fra", "til", "spart", "antall"}} for varer der et alternativ er rimeligere."""
+def finn(oda, liste: dict, profil: dict, hopp_over=(), logg=lambda *_: None, spar: bool = False) -> dict:
+    """{nokkel: {"produkt", "fra", "til", "spart", "antall"}} for varer der et alternativ er rimeligere.
+
+    spar=True (sparemodus): kortholdbare varer byttes til en frossen/langholdbar
+    variant når den koster høyst SPAR_MERPRIS mer enn originalen.
+    """
     bytter = {}
     for x in liste["kjop"]:
         if x["nokkel"] in hopp_over or x.get("delvis_lager") or not x.get("behov_basis"):
@@ -114,26 +133,38 @@ def finn(oda, liste: dict, profil: dict, hopp_over=(), logg=lambda *_: None) -> 
         if not orig_st or orig_st[0] != dim or not orig.get("price"):
             continue
         _, orig_kost = _kostnad(behov, orig_st[1], orig["price"])
-        try:
-            treff = _hent_sok(oda, _sokeord(x["tittel"]))
-        except OdaFeil as e:
-            logg(f"Prissøk for {x['tittel']} feilet: {e}")
-            continue
-        beste = None
-        for k in treff.get("items", [])[:MAKS_KANDIDATER]:
+        kort = spar and matvarer.holdbarhet_uapnet(x["tittel"], orig.get("full_name", "")) < matvarer.SPAR_MIN_DAGER
+        sok = [_sokeord(x["tittel"])] + ([f"{_hovedord(x['tittel'])} fryst"] if kort else [])
+        kandidater, sett = [], set()
+        for q in sok:
+            try:
+                for k in _hent_sok(oda, q).get("items", [])[:MAKS_KANDIDATER]:
+                    if k["id"] not in sett:
+                        sett.add(k["id"])
+                        kandidater.append(k)
+            except OdaFeil as e:
+                logg(f"Prissøk for {x['tittel']} feilet: {e}")
+        beste = beste_holdbar = None
+        for k in kandidater:
             if k["id"] == orig["id"] or not k.get("price"):
                 continue
             st = enheter.pakkestorrelse(k.get("subtitle", ""), k.get("name", ""))
-            if not st or st[0] != dim or not _passer(k, orig, x["tittel"], profil):
+            if not st or st[0] != dim or not _passer(k, orig, x["tittel"], profil, tillat_fryst=spar):
                 continue
             antall, kost = _kostnad(behov, st[1], k["price"])
+            if kort and matvarer.holdbarhet_uapnet(k.get("name", ""), k.get("subtitle", "")) >= matvarer.SPAR_MIN_DAGER:
+                if beste_holdbar is None or kost < beste_holdbar[2]:
+                    beste_holdbar = (k, antall, kost)
             if beste is None or kost < beste[2]:
                 beste = (k, antall, kost)
+        holdbar_bytte = bool(beste_holdbar and beste_holdbar[2] <= orig_kost * (1 + SPAR_MERPRIS))
+        if holdbar_bytte:
+            beste = beste_holdbar
         if not beste:
             continue
         k, antall, kost = beste
         spart = orig_kost - kost
-        if spart >= MIN_SPARING_KR and spart >= MIN_SPARING_ANDEL * orig_kost:
+        if holdbar_bytte or (spart >= MIN_SPARING_KR and spart >= MIN_SPARING_ANDEL * orig_kost):
             produkt = som_produkt(k)
             bytter[x["nokkel"]] = {
                 "tittel": x["tittel"],
@@ -142,5 +173,6 @@ def finn(oda, liste: dict, profil: dict, hopp_over=(), logg=lambda *_: None) -> 
                 "til": f"{produkt['name']} ({produkt['name_extra']})",
                 "spart": round(spart, 2),
                 "antall": antall,
+                "holdbar": holdbar_bytte,
             }
     return bytter

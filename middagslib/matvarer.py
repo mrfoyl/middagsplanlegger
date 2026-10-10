@@ -11,6 +11,8 @@ import unicodedata
 # spesifikke ord står før generelle ("kyllingpålegg" før "kylling").
 HOLDBARHET = [
     (("fryst", "frossen", "frosne", "frys"), 180),
+    # Tørrvarer først, så merkenavn som "Sopps Makaroni" ikke tolkes som sopp
+    (("pasta", "makaroni", "spaghetti", "penne", "fusilli", "tagliatelle", "nudler", "couscous", "bulgur", "linser", "jasminris", "basmatiris"), 365),
     (("kokosmelk", "kokosfløte", "havremelk", "havrefløte", "soyamelk", "flatbrød", "knekkebrød", "hermetisk", "boks", "knuste tomater", "hakkede tomater", "polpa", "passata", "tomatpuré", "kokosmelk", "tørket", "tørr", "pulver", "buljong", "kraft", "krydder", "malt"), 365),
     (("pålegg", "bacon", "skinke", "salami", "pølse", "chorizo"), 10),
     (("laks", "torsk", "sei", "ørret", "hyse", "fisk", "reker", "scampi", "skalldyr", "blåskjell", "kveite"), 2),
@@ -55,7 +57,7 @@ FRYSBAR_ORD = ("gryte", "suppe", "lasagne", "chili", "kjøttsaus", "bolognese", 
 IKKE_FRYSBAR_ORD = ("salat", "wok", "taco", "sushi", "carpaccio", "poke")
 
 # Rettstyper vi ikke vil ha to av samme uke
-RETTSTYPER = ("wok", "suppe", "gryte", "pasta", "taco", "salat", "pizza", "lasagne", "burger", "pai", "risotto", "curry", "karri", "lapskaus", "tortilla", "enchiladas")
+RETTSTYPER = ("wok", "suppe", "gryte", "pasta", "taco", "salat", "pizza", "lasagne", "burger", "pai", "risotto", "curry", "karri", "lapskaus", "tortilla", "enchiladas", "pannekake", "chili", "omelett", "grateng")
 
 STERKT_ORD = ("chili", "jalapeño", "jalapeno", "sriracha", "sterk", "habanero", "cayenne", "harissa", "sambal")
 
@@ -143,3 +145,55 @@ def minutter(varighet: str):
 
 def rettstyper(navn: str) -> set:
     return {t for t in RETTSTYPER if inneholder(navn, t)}
+
+
+# --- sparemodus: billige middager som holder i to uker ---
+
+SPAR_MIN_DAGER = 14
+# Råvarer som finnes frosne hos Oda, eller som tåler å fryses ned ved levering
+FRYSEERSTATTBAR = (
+    "kylling", "kalkun", "kjøttdeig", "karbonadedeig", "deig", "laks", "torsk", "sei", "hyse", "fisk", "reker",
+    "scampi", "brokkoli", "blomkål", "spinat", "erter", "bønner", "mais", "wok", "grønnsak", "bær", "kjøttboller",
+    "kjøttkaker", "karbonader", "svin", "biff", "strimler", "pølse", "bacon", "skinke", "kjøtt",
+    "paprika", "grytebase", "suppebase", "brød", "rundstykke", "lompe", "pita", "naan",
+)
+
+# Uåpnet holdbarhet der den er vesentlig lengre enn det hovedtabellen bruker
+# (som regner med at åpnede rester må brukes raskt). Brukes bare til å vurdere
+# om varene holder i to uker i sparemodus.
+UAPNET = [
+    (("revet",), 30),
+    (("tortilla",), 30),
+    (("fløte", "rømme", "crème fraîche", "creme fraiche", "kesam", "kremost", "cottage", "matfløte"), 21),
+    (("sitron", "lime"), 21),
+    (("melk", "yoghurt"), 10),
+]
+
+
+def holdbarhet_uapnet(*tekster: str, basis: bool = False) -> int:
+    """Kan bare forlenge hovedtabellens anslag ("kokosmelk" forblir langholdbar)."""
+    tekst = " ".join(t for t in tekster if t)
+    vanlig = holdbarhet(tekst, basis=basis)
+    for ordliste, dager in UAPNET:
+        if any(inneholder(tekst, o) for o in ordliste):
+            return max(vanlig, dager)
+    return vanlig
+
+
+def korte_ingredienser(r: dict) -> list:
+    """Ikke-basis-ingredienser som holder kortere enn to uker."""
+    return [i for i in r["ingredienser"] if not i.get("is_basic")
+            and holdbarhet_uapnet(i["title"], (i.get("product") or {}).get("full_name", "")) < SPAR_MIN_DAGER]
+
+
+def fryseerstattbar(tittel: str) -> bool:
+    return any(inneholder(tittel, o) for o in FRYSEERSTATTBAR)
+
+
+def ikke_erstattbare(r: dict) -> list:
+    """Kortholdbare ingredienser som verken finnes frosne eller kan fryses (urter, salat …)."""
+    return [i for i in korte_ingredienser(r) if not fryseerstattbar(i["title"])]
+
+
+def spar_egnet(r: dict, maks_ikke_erstattbare: int = 1) -> bool:
+    return len(ikke_erstattbare(r)) <= maks_ikke_erstattbare

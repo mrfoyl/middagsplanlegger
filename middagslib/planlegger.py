@@ -38,6 +38,13 @@ STRAFF_STERK = 30
 BONUS_LIKER = 25
 STRAFF_PER_SPORSMAL = 3
 
+# Sparemodus: billige middager der varene holder i to uker
+SPARSOK = ["fiskepinner", "fiskegrateng", "fiskeboller", "pølser", "kjøttdeig", "kyllinglår", "linser", "bønner",
+           "kikerter", "pasta", "ris", "suppe", "gryte", "lapskaus", "pannekaker", "omelett", "chili", "karbonader"]
+SPAR_VEKT_KOSTNAD = 1.0
+SPAR_VEKT_SVINN = 2.0
+SPAR_STRAFF_IKKE_ERSTATTBAR = 80
+
 
 # --- uker og datoer ---
 
@@ -89,11 +96,12 @@ def egnet(r: dict, p: dict, maks_tid: int = None):
     return True, ""
 
 
-def kandidater(oda, p: dict, uke: str, maks: int = 30, logg=lambda *_: None) -> list:
+def kandidater(oda, p: dict, uke: str, maks: int = 30, logg=lambda *_: None, spar: bool = False) -> list:
     # Roter søkene per uke så forslagene varierer
     nr = int(uke.split("-W")[1])
-    start = nr % len(STANDARDSOK)
-    sok = p.get("liker", []) + [s for s in STANDARDSOK[start:] + STANDARDSOK[:start] if s not in p.get("liker", [])]
+    grunnsok = SPARSOK if spar else STANDARDSOK
+    start = nr % len(grunnsok)
+    sok = p.get("liker", []) + [s for s in grunnsok[start:] + grunnsok[:start] if s not in p.get("liker", [])]
 
     ider = []
     per_sok = max(2, math.ceil(maks / max(1, len(sok))) + 1)
@@ -119,6 +127,8 @@ def kandidater(oda, p: dict, uke: str, maks: int = 30, logg=lambda *_: None) -> 
             logg(f"Oppskrift {oid} feilet: {e}")
             continue
         ok, grunn = egnet(r, p)
+        if ok and spar and not matvarer.spar_egnet(r):
+            ok, grunn = False, "for mye ferskvare for sparemodus"
         (ut if ok else avvist).append(r if ok else (r["navn"], grunn))
     for s, e in oppskrifter.egne().items():
         r = oppskrifter.fra_egen(s, e)
@@ -135,26 +145,34 @@ def _jitter(uke: str, ref: str) -> float:
     return int(hashlib.sha1(f"{uke}{ref}".encode()).hexdigest()[:6], 16) / 0xFFFFFF
 
 
-def _poeng(kand, valgte, porsjoner, p, lagervarer, historikk, uke) -> float:
+def _poeng(kand, valgte, porsjoner, p, lagervarer, historikk, uke, spar=False) -> float:
     liste = handleliste.beregn(valgte + [(kand, porsjoner)], lagervarer, p)
-    s = liste["svinn"] + VEKT_KOSTNAD * liste["sum"] + STRAFF_PER_SPORSMAL * len(liste["usikre"])
+    if spar:
+        s = SPAR_VEKT_SVINN * liste["svinn"] + SPAR_VEKT_KOSTNAD * liste["sum"]
+        s += SPAR_STRAFF_IKKE_ERSTATTBAR * len(matvarer.ikke_erstattbare(kand))
+        # Pris veier tyngre i sparemodus; skaler resten likt så variasjon ikke drukner
+        f = SPAR_VEKT_KOSTNAD / VEKT_KOSTNAD
+    else:
+        s = liste["svinn"] + VEKT_KOSTNAD * liste["sum"]
+        f = 1.0
+    s += STRAFF_PER_SPORSMAL * len(liste["usikre"])
     hoved = kand.get("hovedingrediens")
     if hoved and any(v.get("hovedingrediens") == hoved for v, _ in valgte):
-        s += STRAFF_SAMME_HOVEDINGREDIENS
+        s += f * STRAFF_SAMME_HOVEDINGREDIENS
     typer = matvarer.rettstyper(kand["navn"])
     if typer and any(typer & matvarer.rettstyper(v["navn"]) for v, _ in valgte):
-        s += STRAFF_SAMME_RETTSTYPE
+        s += f * STRAFF_SAMME_RETTSTYPE
     if kand["ref"] in historikk:
-        s += STRAFF_NYLIG_BRUKT
+        s += f * STRAFF_NYLIG_BRUKT
     if p.get("barnevennlig") and matvarer.er_sterk(kand["navn"] + " " + " ".join(i["title"] for i in kand["ingredienser"])):
-        s += STRAFF_STERK
+        s += f * STRAFF_STERK
     tekst = kand["navn"] + " " + " ".join(kand.get("tagger", []))
     if any(matvarer.inneholder(tekst, l) for l in p.get("liker", [])):
-        s -= BONUS_LIKER
+        s -= f * BONUS_LIKER
     return s + 20 * _jitter(uke, kand["ref"])
 
 
-def velg(kandidater_, antall, porsjoner, p, lagervarer, valgte, historikk, uke, krav=lambda r: True) -> list:
+def velg(kandidater_, antall, porsjoner, p, lagervarer, valgte, historikk, uke, krav=lambda r: True, spar=False) -> list:
     """Velg `antall` retter grådig. `valgte` er [(oppskrift, porsjoner)] som allerede er med."""
     valgte = list(valgte)
     nye = []
@@ -163,7 +181,7 @@ def velg(kandidater_, antall, porsjoner, p, lagervarer, valgte, historikk, uke, 
         aktuelle = [k for k in kandidater_ if k["ref"] not in brukt and krav(k)]
         if not aktuelle:
             break
-        beste = min(aktuelle, key=lambda k: _poeng(k, valgte, porsjoner, p, lagervarer, historikk, uke))
+        beste = min(aktuelle, key=lambda k: _poeng(k, valgte, porsjoner, p, lagervarer, historikk, uke, spar))
         valgte.append((beste, porsjoner))
         nye.append(beste)
         brukt.add(beste["ref"])
@@ -210,7 +228,7 @@ def _sett_rett(d: dict, r: dict, porsjoner: int, type_: str = "lag") -> None:
     d.update({"type": type_, "ref": r["ref"], "navn": r["navn"], "porsjoner": porsjoner, "minutter": r.get("minutter"), "frysbar": r.get("frysbar", False), "url": r.get("url", "")})
 
 
-def lag(oda, p: dict, uke: str, ekstra_aktivitet=(), kalenderdager=(), onsket=(), maks_kandidater=30, logg=lambda *_: None) -> dict:
+def lag(oda, p: dict, uke: str, ekstra_aktivitet=(), kalenderdager=(), onsket=(), maks_kandidater=30, logg=lambda *_: None, spar=False) -> dict:
     dato = datoer(uke)
     porsjoner = profilmod.porsjoner(p)
     middagsdager = [d for d in profilmod.UKEDAGER if d in p["middagsdager"]]
@@ -263,7 +281,8 @@ def lag(oda, p: dict, uke: str, ekstra_aktivitet=(), kalenderdager=(), onsket=()
     def hent_pool():
         nonlocal pool
         if pool is None:
-            pool = kandidater(oda, p, uke, maks_kandidater, logg)
+            # Sparemodus filtrerer bort mange retter, så vi henter flere kandidater
+            pool = kandidater(oda, p, uke, int(maks_kandidater * (1.5 if spar else 1)), logg, spar)
         return pool
 
     maks_tid = p.get("maks_tid_min")
@@ -275,7 +294,7 @@ def lag(oda, p: dict, uke: str, ekstra_aktivitet=(), kalenderdager=(), onsket=()
     if len(frys_retter) < len(par):
         frys_retter += velg(hent_pool(), len(par) - len(frys_retter), porsjoner * 2, p, lagervarer,
                             [(r, porsjoner * 2) for r in frys_retter], historikk, uke,
-                            krav=lambda r: r["frysbar"] and r not in onskede and innen_tid(r))
+                            krav=lambda r: r["frysbar"] and r not in onskede and innen_tid(r), spar=spar)
     valgte += [(r, porsjoner * 2) for r in frys_retter]
     kokedager = sorted(par, key=_indeks)
     for kokedag in kokedager[len(frys_retter):]:
@@ -293,7 +312,7 @@ def lag(oda, p: dict, uke: str, ekstra_aktivitet=(), kalenderdager=(), onsket=()
     raske_retter = [r for r in onskede if r not in frys_retter and er_rask(r)][: len(raske)]
     if len(raske_retter) < len(raske):
         raske_retter += velg(hent_pool(), len(raske) - len(raske_retter), porsjoner, p, lagervarer,
-                             valgte + [(r, porsjoner) for r in raske_retter], historikk, uke, krav=er_rask)
+                             valgte + [(r, porsjoner) for r in raske_retter], historikk, uke, krav=er_rask, spar=spar)
     valgte += [(r, porsjoner) for r in raske_retter]
 
     # Vanlige dager
@@ -304,7 +323,7 @@ def lag(oda, p: dict, uke: str, ekstra_aktivitet=(), kalenderdager=(), onsket=()
         vanlige_retter = vanlige_retter[:antall_vanlige]
     if len(vanlige_retter) < antall_vanlige:
         vanlige_retter += velg(hent_pool(), antall_vanlige - len(vanlige_retter), porsjoner, p, lagervarer,
-                               valgte + [(r, porsjoner) for r in vanlige_retter], historikk, uke, krav=innen_tid)
+                               valgte + [(r, porsjoner) for r in vanlige_retter], historikk, uke, krav=innen_tid, spar=spar)
 
     # 4. fordel på dager
     for kokedag, r in zip(kokedager, sorted(frys_retter, key=_korteste_holdbarhet)):
@@ -338,6 +357,7 @@ def lag(oda, p: dict, uke: str, ekstra_aktivitet=(), kalenderdager=(), onsket=()
         "advarsler": advarsler,
         "kurvlogg": [],
         "bytter": {},
+        "modus": "spar" if spar else "vanlig",
         "ekstra": faste_varer(p, lagermod.last()),
         "ekstra_middager": [],
     }
@@ -358,12 +378,12 @@ def optimaliser_priser(oda, plan: dict, p: dict, logg=lambda *_: None) -> list:
     """Bytt til rimeligste likeverdige produkt for varer vi ikke allerede har valgt produkt for."""
     liste = handleliste_for(oda, plan, p)
     hopp_over = set(plan.get("produktvalg", {})) | set(plan.get("behold_original", []))
-    nye = billigst.finn(oda, liste, p, hopp_over, logg)
+    nye = billigst.finn(oda, liste, p, hopp_over, logg, spar=plan.get("modus") == "spar")
     if not nye:
         return []
     for nokkel, b in nye.items():
         plan["produktvalg"][nokkel] = b["produkt"]
-        plan.setdefault("bytter", {})[nokkel] = {k: b[k] for k in ("tittel", "fra", "til", "spart")}
+        plan.setdefault("bytter", {})[nokkel] = {k: b.get(k) for k in ("tittel", "fra", "til", "spart", "holdbar")}
     _endret(plan)
     lagre(plan)
     return list(nye.values())
@@ -383,13 +403,14 @@ def faste_varer(p: dict, lagervarer: list) -> list:
 
 
 def _velg_lagedag(plan: dict) -> str:
-    """Dag å lage en ekstra fryse-middag: den raskeste vanlige middagen i uken."""
+    """Dag å lage en ekstra fryse-middag: den raskeste vanlige middagen, og aldri to på samme dag om det kan unngås."""
     vanlige = [d for d in plan["dager"] if d["type"] == "lag" and not d.get("aktivitet")]
     if not vanlige:
         vanlige = [d for d in plan["dager"] if d["type"] in ("lag", "lag_dobbel")]
     if not vanlige:
         return plan["dager"][-1]["dag"]
-    return min(vanlige, key=lambda d: (d.get("minutter") or 99, -_indeks(d["dag"])))["dag"]
+    brukt = [x.get("lagedag") for x in plan.get("ekstra_middager", [])]
+    return min(vanlige, key=lambda d: (brukt.count(d["dag"]), d.get("minutter") or 99, -_indeks(d["dag"])))["dag"]
 
 
 def sikre_minstebelop(oda, plan: dict, p: dict, maks_kandidater: int = 30, logg=lambda *_: None) -> list:
@@ -414,13 +435,21 @@ def sikre_minstebelop(oda, plan: dict, p: dict, maks_kandidater: int = 30, logg=
     innen_tid = lambda r: not maks_tid or not r.get("minutter") or r["minutter"] <= maks_tid
     pool = None
     lagt_til = []
-    for _ in range(10):
+    maks = int(p.get("maks_ekstra_middager", 2))
+    while True:
         liste = handleliste_for(oda, plan, p)
         if i_kurv + liste["sum"] + ekstra_sum >= grense:
             break
+        if len(plan.get("ekstra_middager", [])) >= maks:
+            melding = (f"Fortsatt under minstebeløpet ({int(i_kurv + liste['sum'] + ekstra_sum)} av {int(grense)} kr) "
+                       f"etter {maks} ekstra middager. Legg til andre varer du trenger, eller øk maks_ekstra_middager.")
+            # Bare ett slikt varsel, med siste beløp (sjekken kjøres flere ganger)
+            plan["advarsler"] = [a for a in plan["advarsler"] if not a.startswith("Fortsatt under minstebeløpet")] + [melding]
+            lagre(plan)
+            break
         if pool is None:
-            pool = kandidater(oda, p, plan["uke"], maks_kandidater, logg)
-        nye = velg(pool, 1, plan["porsjoner"], p, lagervarer, retter(oda, plan), historikk, plan["uke"],
+            pool = kandidater(oda, p, plan["uke"], maks_kandidater, logg, plan.get("modus") == "spar")
+        nye = velg(pool, 1, plan["porsjoner"], p, lagervarer, retter(oda, plan), historikk, plan["uke"], spar=plan.get("modus") == "spar",
                    krav=lambda r: r.get("frysbar") and innen_tid(r))
         if not nye:
             break

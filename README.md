@@ -74,6 +74,26 @@ python3 middag.py profil sett kalender ja
 python3 middag.py profil sett kalender_sokeord "fotball,svømming,turn"
 ```
 
+### Sparemodus
+
+`plan lag --spar` gir spesielt billige middager der varene holder i minst to uker:
+
+- Bare retter der høyst én kortholdbar vare ikke finnes frossen eller kan fryses
+  (typisk en urt til pynt). Kylling, kjøttdeig, fisk, pølser og grønnsaker er greit:
+  de byttes til frossen variant eller står på «frys ned ved levering».
+- Ferske varer byttes til frossen variant når den koster høyst 15 % mer.
+- Pris veier over 3 ganger tyngre enn vanlig, og svinn dobbelt. Variasjonsstraffene
+  skaleres likt, så det ikke blir pannekaker hver dag.
+- Holdbarhet vurderes uåpnet: fløte, rømme og sitron regnes som 3 uker, revet ost
+  og tortilla som 4. Svinnberegningen bruker fortsatt kortere tall for åpnede rester.
+- Planen viser kr per porsjon, hva som bør fryses ved levering, og hva som ikke
+  holder to uker.
+
+Sparemodus som standard: `profil sett sparemodus ja` (overstyr med `plan lag --vanlig`).
+
+Minstebeløp-sjekken legger til høyst `maks_ekstra_middager` (standard 2) fryse-middager,
+fordelt på ulike dager. Er handelen fortsatt under grensen, står det i planen.
+
 ### Utskrift av dagens oppskrift
 
 `python3 middag.py skriv-ut` skriver ut dagens oppskrift som en A4-PDF. Arket har
