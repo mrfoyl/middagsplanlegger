@@ -15,6 +15,21 @@ Utskriften er WhatsApp-formatert og kan sendes rett til Ole.
    les ingredienslisten (`oppskrift vis <ref>`) før du foreslår en rett du er
    usikker på.
 
+## Avklaringer: still dem som vanlig melding
+
+**Ikke bruk spørsmålsverktøyet** (ask/question) til avklaringer, lagersjekk eller
+faste varer. Openclaw krever da ett svar per linje, og at hvert svar matcher et
+alternativ. Ett ubesvart spørsmål avviser hele svaret, og Ole blir sittende fast.
+
+Skriv i stedet spørsmålene som en nummerert liste i en vanlig melding, og godta
+fritekst. Eksempler på svar du må forstå:
+- «alt kjøp», «ingen», «har alt»
+- «1-3 har, resten kjøp», «1 og 4 kjøp»
+- «paprika har, løk kjøp», «ikke kjøp noe»
+
+Oversett svaret til én `plan avklar <vare> har|kjop` per vare. «Ikke kjøp»
+betyr `har`. Er noe uklart, spør bare om akkurat det.
+
 ## Ukesflyt
 
 1. `plan lag`. Uke-planen for neste uke. Valgfritt:
