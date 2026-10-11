@@ -10,7 +10,7 @@ from pathlib import Path
 ROT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROT))
 
-from middagslib import billigst, enheter, handleliste, lager, matvarer, oppskrifter, planlegger, profil, rapport  # noqa: E402
+from middagslib import billigst, enheter, palegg, handleliste, lager, matvarer, oppskrifter, planlegger, profil, rapport  # noqa: E402
 from middagslib.oda import IkkeTillatt, Oda, OdaFeil  # noqa: E402
 
 FIX = ROT / "tests" / "fixtures"
@@ -313,7 +313,7 @@ class TestPlan(MedData):
         refs_i_handleliste = {r["ref"] for r, _ in planlegger.retter(self.oda, plan)}
         for x in plan["ekstra_middager"]:
             self.assertIn(x["ref"], refs_i_handleliste)
-        self.assertIn("ekstra middag", plan["advarsler"][0].lower())
+        self.assertTrue(any("ekstra middag" in a.lower() for a in plan["advarsler"]))
 
     def test_minstebelop_tar_med_faste_varer(self):
         # Faste ukevarer (bleier, brød osv.) legges også i kurven og teller mot
@@ -602,6 +602,93 @@ class TestBilligst(MedData):
         p = profil.sett("allergier", "nøtter")
         plan = planlegger.lag(self.oda, p, UKE, onsket=["3004"])
         self.assertFalse([b for b in plan["bytter"].values() if b["tittel"] == "Kremfløte"])
+
+
+PALEGG = "Pålegg"
+
+
+class TestPalegg(MedData):
+    def setUp(self):
+        super().setUp()
+        o = self.oda
+        kat = {}
+        o.produkter["norvegia"] = [_treff(1, "TINE Norvegia Skivet", "300 g", 55.0), _treff(2, "Synnøve Gulost skivet", "150 g", 17.0),
+                                   _treff(3, "Norvegia blokk", "1 kg", 140.0)]  # over makspris
+        o.produkter["brunost"] = [_treff(10, "TINE Gudbrandsdalsost Skivet", "130 g", 22.6), _treff(11, "Synnøve Fløtemysost", "150 g", 28.8)]
+        o.produkter["salami"] = [_treff(20, "Strøm-Larsen Salami skivet", "150 g", 57.4), _treff(21, "Grilstad Dansk salami Skivet", "225 g", 38.6),
+                                 _treff(22, "Big One Salami Pizza", "400 g", 29.9)]
+        o.produkter["leverpostei"] = [_treff(30, "Prima Lavpris Leverpostei", "185 g", 19.2)]
+        o.produkter["makrell i tomat"] = [_treff(40, "Stabburet Makrell i tomat", "170 g", 29.0)]
+        o.produkter["syltetøy"] = [_treff(50, "Prima Lavpris Jordbærsyltetøy", "1 kg", 40.2)]
+        kat.update({i: [PALEGG, "Ost", "Ost i skiver"] for i in (1, 2, 3, 10, 11)})
+        kat.update({20: [PALEGG, "Spekemat og salami"], 21: [PALEGG, "Spekemat og salami"], 22: ["Middager og tilbehør", "Pizza"],
+                    30: [PALEGG, "Leverpostei"], 40: [PALEGG, "Fiskepålegg og reker i lake"], 50: [PALEGG, "Syltetøy", "Syltetøy"]})
+        o.kategorier = kat
+
+    def ider(self, varer):
+        return {x["id"] for x in varer}
+
+    def test_faste_og_tilfeldige(self):
+        varer, adv = palegg.velg(self.oda, self.p, UKE)
+        typer = [x["palegg"] for x in varer]
+        self.assertEqual(typer[:2], ["gulost", "brunost"])
+        self.assertEqual(len(typer), 5)  # 2 faste + 3 tilfeldige
+        self.assertNotIn(3, self.ider(varer))   # for dyr pakke
+        self.assertNotIn(22, self.ider(varer))  # salamipizza: feil kategori
+        self.assertFalse(adv)
+        self.assertEqual(varer, palegg.velg(self.oda, self.p, UKE)[0])  # fast per uke
+
+    def test_billigst_per_kg_i_spekemat(self):
+        varer = palegg.kandidater(self.oda, "spekemat", self.p)
+        self.assertEqual([x["id"] for x in varer], [21, 20])  # 172 kr/kg før 383 kr/kg
+        self.assertEqual(varer[0]["kr_kg"], 172)
+
+    def test_svarteliste_produkt_og_ord(self):
+        palegg.svarteliste(self.p, "21")
+        palegg.svarteliste(self.p, "Gudbrandsdal")
+        self.assertEqual([x["id"] for x in palegg.kandidater(self.oda, "spekemat", self.p)], [20])
+        self.assertEqual([x["id"] for x in palegg.kandidater(self.oda, "brunost", self.p)], [11])
+        palegg.fjern_fra_svarteliste(self.p, "21")
+        self.assertIn(21, self.ider(palegg.kandidater(self.oda, "spekemat", self.p)))
+
+    def test_varierer_fra_forrige_uke(self):
+        foer, _ = palegg.velg(self.oda, self.p, "2026-W42")
+        palegg.husk("2026-W42", foer)
+        etter, _ = palegg.velg(self.oda, self.p, "2026-W43")
+        tilfeldige = lambda v: {x["palegg"] for x in v if x["palegg"] not in ("gulost", "brunost")}
+        # fire typer har varer i testen og tre velges: typen som ble hoppet over sist, må med nå
+        ubrukt = {"spekemat", "leverpostei", "fiskepalegg", "syltetoy"} - tilfeldige(foer)
+        self.assertEqual(len(ubrukt), 1)
+        self.assertTrue(ubrukt <= tilfeldige(etter))
+        gulost = lambda v: next(x["id"] for x in v if x["palegg"] == "gulost")
+        self.assertNotEqual(gulost(foer), gulost(etter))
+
+    def test_i_planen_og_kurven(self):
+        plan = planlegger.lag(self.oda, self.p, UKE, onsket=["3004"])
+        pal = [x for x in plan["ekstra"] if x.get("palegg")]
+        self.assertEqual(len(pal), 5)
+        tekst = rapport.plan(plan, planlegger.handleliste_for(self.oda, plan, self.p))
+        self.assertIn("Pålegg denne uken", tekst)
+        self.assertIn("kr/kg", tekst)
+        for u in planlegger.handleliste_for(self.oda, plan, self.p)["usikre"]:
+            planlegger.avklar(self.oda, plan, self.p, u["tittel"], "har")
+        planlegger.godkjenn(self.oda, plan, self.p)
+        planlegger.til_kurv(self.oda, plan, self.p)
+        lagt = {pid for pid, _ in self.oda.lagt_til}
+        self.assertTrue(self.ider(pal) <= lagt)
+
+    def test_bytt_og_svarteliste_i_planen(self):
+        p = self.p
+        p["palegg"] = palegg.innstillinger(p) | {"faste": ["spekemat"], "tilfeldige": 0}
+        plan = planlegger.lag(self.oda, p, UKE, onsket=["3004"])
+        gammel, ny = planlegger.bytt_palegg(self.oda, plan, p, "salami")
+        self.assertNotEqual(gammel["id"], ny["id"])
+        palegg.svarteliste(p, str(ny["id"]))
+        bytter = planlegger.bytt_svartelistet_palegg(self.oda, plan, p)
+        self.assertEqual(len(bytter), 1)
+        ider = self.ider(x for x in plan["ekstra"] if x.get("palegg"))
+        self.assertNotIn(ny["id"], ider)
+        self.assertTrue(ider)
 
 
 class TestUtskrift(MedData):

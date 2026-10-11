@@ -175,6 +175,35 @@ Planen dekker fortsatt én uke av gangen.
   minstebeløp-sjekken og i kurvvisningen. Odas urabatterte tall vises i parentes
   når de avviker.
 
+### Pålegg
+
+`middagslib/palegg.py` velger ukens pålegg. Hver uke kommer de faste typene
+(standard gulost og brunost) pluss tre tilfeldige typer fra resten: smøreost,
+kjøtt- og kyllingpålegg, spekemat, leverpostei, salatpålegg, fiskepålegg,
+tubepålegg, syltetøy, søtpålegg og honning. Typer fra forrige uke velges sist.
+
+Innenfor hver type søker velgeren hos Oda og sorterer på kr/kg. Kiloprisen
+regnes ut fra pris og vekt, fordi Odas egen av og til er feil. Kategorien
+bekreftes på produktsiden (Pålegg › Spekemat og salami osv.), og pakker over
+`maks_pris` (standard 80 kr, gulost 130 kr) hoppes over. Velgeren tar en
+tilfeldig vare blant de fire rimeligste og unngår forrige ukes vare. Valget er
+fast per uke, så samme uke gir samme pålegg om igjen.
+
+| Kommando | Hva |
+|---|---|
+| `palegg vis` | innstillinger og svarteliste |
+| `palegg faste gulost,brunost` | typer som kommer hver uke |
+| `palegg antall 3` | antall tilfeldige typer i tillegg |
+| `palegg maks-pris 80` | høyeste pris per pakke |
+| `palegg svarteliste <produkt-id\|ord>` | aldri dette produktet / ingenting med ordet. Bytter det også ut i en plan som ikke er i kurven ennå |
+| `palegg fjern-svarteliste <produkt-id\|ord>` | angre |
+| `plan palegg` | velg ukens pålegg på nytt |
+| `plan palegg-bytt <type\|produkt-id\|ord>` | en annen vare av samme type |
+
+Pålegget ligger i planens `ekstra` (merket `palegg`), teller mot minstebeløpet og
+legges i kurven sammen med de faste varene. Historikken ligger i
+`data/palegg_historikk.json`.
+
 ### Utskrift
 
 `python3 middag.py skriv-ut` skriver ut dagens oppskrift som en A4-PDF. Arket har
@@ -246,6 +275,7 @@ middagslib/
   handleliste.py        sammenslåing på tvers av retter, lager, svinn
   planlegger.py         utvalg, dagfordeling, minstebeløp, godkjenning, kurv
   billigst.py           rimeligste likeverdige produkt, frosne varianter i sparemodus
+  palegg.py             ukens pålegg: faste + tilfeldige typer, rimelig per kg, svarteliste
   profil.py / lager.py  familieprofil, faste varer, det vi har hjemme
   matvarer.py           holdbarhet, allergener, frysbarhet, sparemodus (nøkkelord)
   enheter.py            «500 g», «3 dl», «4 x 125 g»

@@ -20,7 +20,7 @@ import hashlib
 import json
 import math
 
-from . import billigst, enheter, handleliste, lagring, matvarer, oppskrifter, profil as profilmod
+from . import billigst, enheter, handleliste, lagring, matvarer, oppskrifter, palegg as paleggmod, profil as profilmod
 from . import lager as lagermod
 from .oda import Oda, OdaFeil
 
@@ -361,6 +361,13 @@ def lag(oda, p: dict, uke: str, ekstra_aktivitet=(), kalenderdager=(), onsket=()
         "ekstra": faste_varer(p, lagermod.last()),
         "ekstra_middager": [],
     }
+    try:
+        varer, adv = paleggmod.velg(oda, p, uke, logg)
+        plan["ekstra"] += varer
+        advarsler += adv
+        paleggmod.husk(uke, varer)
+    except OdaFeil as e:
+        advarsler.append(f"Fant ikke pålegg denne uken ({e}). Prøv igjen med: plan palegg")
     lagre(plan)
     optimaliser_priser(oda, plan, p, logg)
     # Prisoptimalisering kan presse summen under minstebeløpet igjen (billigere varer på de
@@ -400,6 +407,62 @@ def faste_varer(p: dict, lagervarer: list) -> list:
             e["sjekk"] = f"lageret har «{v['navn']}»{mengde} – trenger dere mer?"
         ut.append(e)
     return ut
+
+
+def _palegg_i_plan(plan: dict) -> list:
+    return [x for x in plan.get("ekstra", []) if x.get("palegg")]
+
+
+def _finn_palegg(plan: dict, hva: str) -> dict:
+    """Pålegget i planen ut fra produkt-ID, type eller ord i navnet."""
+    varer = _palegg_i_plan(plan)
+    hva = hva.strip()
+    for x in varer:
+        if (hva.isdigit() and x["id"] == int(hva)) or x["palegg"] == hva:
+            return x
+    try:
+        type_ = paleggmod.finn_type(hva)
+        for x in varer:
+            if x["palegg"] == type_:
+                return x
+    except ValueError:
+        pass
+    for x in varer:
+        if not hva.isdigit() and matvarer.inneholder(x["navn"], hva):
+            return x
+    return None
+
+
+def nytt_palegg(oda, plan: dict, p: dict, logg=lambda *_: None) -> list:
+    """Velg ukens pålegg på nytt, f.eks. etter endringer i svartelisten."""
+    varer, adv = paleggmod.velg(oda, p, plan["uke"], logg)
+    plan["ekstra"] = [x for x in plan.get("ekstra", []) if not x.get("palegg")] + varer
+    paleggmod.husk(plan["uke"], varer)
+    _endret(plan)
+    lagre(plan)
+    return adv
+
+
+def bytt_palegg(oda, plan: dict, p: dict, hva: str, logg=lambda *_: None) -> tuple:
+    """Bytt ett pålegg til en annen rimelig vare av samme type. (gammel, ny eller None)."""
+    gammel = _finn_palegg(plan, hva)
+    if not gammel:
+        raise ValueError(f"Fant ikke '{hva}' blant ukens pålegg.")
+    ny = paleggmod.bytt(oda, p, plan["uke"], gammel, logg)
+    i = plan["ekstra"].index(gammel)
+    if ny:
+        plan["ekstra"][i] = ny
+    else:
+        plan["ekstra"].pop(i)
+    paleggmod.husk(plan["uke"], _palegg_i_plan(plan))
+    _endret(plan)
+    lagre(plan)
+    return gammel, ny
+
+
+def bytt_svartelistet_palegg(oda, plan: dict, p: dict, logg=lambda *_: None) -> list:
+    """Bytt ut pålegg i planen som nå er svartelistet. [(gammel, ny eller None)]"""
+    return [bytt_palegg(oda, plan, p, str(x["id"]), logg) for x in _palegg_i_plan(plan) if paleggmod.er_svartelistet(x, p)]
 
 
 def _velg_lagedag(plan: dict) -> str:

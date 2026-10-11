@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from middagslib import lager, oppskrifter, planlegger, profil, rapport  # noqa: E402
+from middagslib import lager, oppskrifter, palegg, planlegger, profil, rapport  # noqa: E402
 from middagslib.oda import Oda, OdaFeil  # noqa: E402
 
 
@@ -48,6 +48,46 @@ def cmd_profil(a):
     elif a.handling == "fast-vare-fjern":
         p = profil.fjern_fast_vare(int(a.felt))
     print(profil.tekst(p))
+
+
+# --- pålegg ---
+
+def cmd_palegg(a):
+    p = profil.last()
+    inn = palegg.innstillinger(p)
+    if a.handling == "faste":
+        typer = [t for v in a.verdi for t in v.split(",") if t.strip()]
+        inn["faste"] = [palegg.finn_type(t) for t in typer]
+        p["palegg"] = inn
+    elif a.handling == "antall":
+        inn["tilfeldige"] = int(a.verdi[0])
+        p["palegg"] = inn
+    elif a.handling == "maks-pris":
+        inn["maks_pris"] = float(a.verdi[0].replace(",", "."))
+        p["palegg"] = inn
+    elif a.handling == "svarteliste":
+        for v in a.verdi:
+            palegg.svarteliste(p, v)
+    elif a.handling == "fjern-svarteliste":
+        for v in a.verdi:
+            palegg.fjern_fra_svarteliste(p, v)
+    if a.handling != "vis":
+        profil.lagre(p)
+    if a.handling == "svarteliste":
+        _bytt_svartelistet(p)
+    print(palegg.tekst(p))
+
+
+def _bytt_svartelistet(p):
+    """Ligger noe svartelistet i ukens plan og den ikke er i kurven ennå, byttes det ut."""
+    try:
+        plan = planlegger.last()
+    except ValueError:
+        return
+    if plan["status"] not in ("utkast", "godkjent"):
+        return
+    for gammel, ny in planlegger.bytt_svartelistet_palegg(_oda(), plan, p):
+        print(f"Byttet i planen: {gammel['navn']} → " + (f"{ny['navn']} ({ny['kr_kg']} kr/kg)" if ny else "ingenting (fant ikke noe annet)"))
 
 
 # --- lager ---
@@ -233,6 +273,13 @@ def cmd_plan(a):
         print(f"Ekstra: {antall}× {a.navn} [{pid}]")
     elif h == "ekstra-fjern":
         print("Fjernet." if planlegger.fjern_ekstra(plan, int(a.args[0])) else "Fant ikke den varen blant ekstravarene.")
+    elif h == "palegg":
+        for m in planlegger.nytt_palegg(oda, plan, p, logg=lambda m: print(m, file=sys.stderr)):
+            print(m)
+        _vis_plan(oda, plan, p)
+    elif h == "palegg-bytt":
+        gammel, ny = planlegger.bytt_palegg(oda, plan, p, " ".join(a.args), logg=lambda m: print(m, file=sys.stderr))
+        print(f"{gammel['navn']} → {ny['navn']} ({ny['kr_kg']} kr/kg)" if ny else f"Fjernet {gammel['navn']} – fant ikke noe annet rimelig av samme type.")
     elif h == "godkjenn":
         planlegger.godkjenn(oda, plan, p)
         print("Planen er godkjent.")
@@ -279,6 +326,11 @@ def parser():
     sp.add_argument("--pris", type=float)
     sp.set_defaults(func=cmd_profil)
 
+    spa = sub.add_parser("palegg", help="ukens pålegg: faste typer, antall tilfeldige, svarteliste")
+    spa.add_argument("handling", choices=["vis", "faste", "antall", "maks-pris", "svarteliste", "fjern-svarteliste"])
+    spa.add_argument("verdi", nargs="*", help="typer (gulost,brunost), tall, produkt-ID eller ord")
+    spa.set_defaults(func=cmd_palegg)
+
     sl = sub.add_parser("lager", help="det vi har hjemme")
     sl.add_argument("handling", choices=["vis", "legg-til", "fjern", "tom", "ok", "rydd", "sjekk"])
     sl.add_argument("varer", nargs="*", help='"vare" eller "vare=mengde", f.eks. "melk=1 l"')
@@ -313,7 +365,7 @@ def parser():
     se.set_defaults(func=cmd_egen)
 
     spl = sub.add_parser("plan", help="ukesplan")
-    spl.add_argument("handling", choices=["lag", "vis", "json", "bytt", "dobbel", "fri", "ferdigmiddag", "avklar", "erstatt", "ekstra", "ekstra-fjern", "billigst", "original", "godkjenn", "kurv", "gjenapne", "ferdig"])
+    spl.add_argument("handling", choices=["lag", "vis", "json", "bytt", "dobbel", "fri", "ferdigmiddag", "avklar", "erstatt", "ekstra", "ekstra-fjern", "palegg", "palegg-bytt", "billigst", "original", "godkjenn", "kurv", "gjenapne", "ferdig"])
     spl.add_argument("args", nargs="*")
     spl.add_argument("--uke", help="f.eks. 2026-W42 (standard: neste uke)")
     spl.add_argument("--aktivitet", help="ekstra aktivitetsdager denne uken, f.eks. tir,tor")

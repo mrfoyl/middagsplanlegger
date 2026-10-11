@@ -76,6 +76,24 @@ betyr `har`. Er noe uklart, spør bare om akkurat det.
 Endrer du noe etter godkjenning, må planen godkjennes på nytt. Verktøyet
 håndhever det.
 
+## Pålegg
+
+Planen har en egen del «Pålegg denne uken». Den velges automatisk: faste typer
+(gulost, brunost) pluss tre tilfeldige, rimelige per kg. Ikke legg pålegg inn som
+faste varer eller med `plan ekstra`. Det er velgerens jobb.
+
+| Ole sier | Kommando |
+|---|---|
+| «Ingen liker den leverposteien» | `palegg svarteliste <produkt-id>` (ID-en står i planen) |
+| «Ikke kjøp makrell i tomat igjen» | `palegg svarteliste makrell` |
+| «Bytt salamien» | `plan palegg-bytt spekemat` |
+| «Vi vil ha syltetøy hver uke» | `palegg faste gulost,brunost,syltetoy` |
+| «Bare to tilfeldige pålegg» | `palegg antall 2` |
+| «Velg pålegg på nytt» | `plan palegg` |
+
+Svartelisting bytter også ut varen i planen hvis den ikke er lagt i kurven ennå.
+Er den allerede i kurven, gjelder svartelisten fra neste uke.
+
 ## Utskrift
 
 Cron skriver ut dagens oppskrift kl. 07 på Brother-laseren. Når Ole ber om det:

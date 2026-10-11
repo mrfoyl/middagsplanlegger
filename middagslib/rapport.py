@@ -74,10 +74,16 @@ def plan(plan_: dict, liste: dict) -> str:
                 linjer.append(f"  • {b['tittel']}: {b['til']} i stedet for {b['fra']} (−{_kr(b['spart'])})")
     if plan_.get("modus") == "spar":
         linjer += sparoversikt(plan_, liste)
+    palegg = [x for x in plan_.get("ekstra", []) if x.get("palegg")]
+    if palegg:
+        linjer.append("*Pålegg denne uken*")
+        linjer += [f"  {x['antall']}× {x['navn']} – {_kr(x['pris'])} ({x['kr_kg']} kr/kg) [{x['id']}]" for x in palegg]
     if plan_.get("ekstra"):
         ekstra_sum = sum(x["antall"] * x.get("pris", 0) for x in plan_["ekstra"])
-        linjer.append("*Ekstra (utenom rettene)*")
-        linjer += [f"  {x['antall']}× {x['navn']}" + (" ❓" if x.get("sjekk") else "") for x in plan_["ekstra"]]
+        andre = [x for x in plan_["ekstra"] if not x.get("palegg")]
+        if andre:
+            linjer.append("*Ekstra (utenom rettene)*")
+            linjer += [f"  {x['antall']}× {x['navn']}" + (" ❓" if x.get("sjekk") else "") for x in andre]
         sporsmal = [x for x in plan_["ekstra"] if x.get("sjekk")]
         if sporsmal:
             linjer.append("*❓ Faste varer – trenger dere dem denne uken?* (svar «har» eller «kjøp»)")
