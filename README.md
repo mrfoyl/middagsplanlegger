@@ -124,7 +124,13 @@ skjer bare når:
 
 - hovedordet står først i et ord i produktnavnet («kyllingkjøttboller» er ikke
   «kjøttboller»)
+- hovedordet ikke bare er tilbehør («Linsegryte med spinat» er ikke spinat)
 - varen ikke er en annen variant (røkt, saus, laktosefri, syltet, sandwich …)
+- varen ikke er ferdigmat (gryte, middags-kit, pizza, ravioli, juice …). Det som
+  kjøpes, må kunne brukes som råvare i en annen rett
+- varen ligger i samme hovedkategori hos Oda som originalen (Frukt og grønt,
+  Kylling og kjøtt …). Kategorien leses fra den offentlige produktsiden og caches
+  i `data/cache/kategorier.json`. Kan den ikke hentes, byttes det ikke
 - kjøttslag og farge ikke endres (storfe → svin og grønne → røde linser avvises)
 - ingen allergier eller unngå-ord treffes
 

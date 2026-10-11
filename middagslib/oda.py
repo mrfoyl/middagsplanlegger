@@ -7,13 +7,18 @@ Sikkerhet:
   oppskrifter i kurven forbi lagersjekken.
 - Passordet leses fra en fil med rettighet 600 utenfor repoet og sendes til
   mcp-oda via stdin (--pass-stdin), aldri som argument eller i logg.
+- Unntak: produktkategorien hentes fra den offentlige produktsiden med en
+  vanlig GET uten innlogging eller informasjonskapsler. Den kan ikke endre noe.
 """
+import html
 import json
 import os
+import re
 import shlex
 import shutil
 import stat
 import subprocess
+import urllib.request
 from pathlib import Path
 
 from . import lagring
@@ -175,6 +180,31 @@ class Oda:
 
     def kurv(self) -> dict:
         return self._json(["cart", "list"])
+
+    def produkt_kategori(self, produkt_id: int) -> list:
+        """Kategoristien til et produkt, f.eks. ["Frukt og grønt", "Frosne grønnsaker"].
+
+        Søket i mcp-oda gir ingen kategori, så vi leser brødsmulestien
+        (schema.org BreadcrumbList) fra den offentlige produktsiden.
+        """
+        url = f"https://oda.com/no/products/{int(produkt_id)}/"
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (middagsplanlegger)"})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                side = r.read().decode("utf-8", "replace")
+        except OSError as e:
+            raise OdaFeil(f"Kunne ikke hente produktsiden {url}: {e}") from e
+        for blokk in re.findall(r'<script type="application/ld\+json">(.*?)</script>', side, re.S):
+            try:
+                data = json.loads(blokk)
+            except json.JSONDecodeError:
+                continue
+            if data.get("@type") != "BreadcrumbList":
+                continue
+            elementer = sorted(data.get("itemListElement", []), key=lambda e: e.get("position", 0))
+            # Hjem > Alle produkter > kategorier … > produktet selv
+            return [html.unescape(e.get("name", "")) for e in elementer[2:-1]]
+        raise OdaFeil(f"Fant ingen kategori på {url}")
 
     @staticmethod
     def belop_etter_rabatt(kurv: dict) -> float:

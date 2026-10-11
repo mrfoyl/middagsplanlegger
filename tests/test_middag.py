@@ -10,7 +10,7 @@ from pathlib import Path
 ROT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROT))
 
-from middagslib import enheter, handleliste, lager, matvarer, oppskrifter, planlegger, profil, rapport  # noqa: E402
+from middagslib import billigst, enheter, handleliste, lager, matvarer, oppskrifter, planlegger, profil, rapport  # noqa: E402
 from middagslib.oda import IkkeTillatt, Oda, OdaFeil  # noqa: E402
 
 FIX = ROT / "tests" / "fixtures"
@@ -33,6 +33,9 @@ class FalskOda:
         self.lister_laget = []
         self.produkter = {}
         self.liste_varer = []
+        self.kategorier = {}  # produkt-id -> kategoristi; ukjent id gir "Test"
+        self.kategori_feil = set()
+        self.kategori_oppslag = []
 
     def sok_oppskrift(self, sok=None, side=1, filtre=("meal:65",)):
         fil = FIX / f"search_{sok}.json"
@@ -42,6 +45,12 @@ class FalskOda:
 
     def sok_produkt(self, sok, side=1):
         return {"items": self.produkter.get(sok, [])}
+
+    def produkt_kategori(self, pid):
+        self.kategori_oppslag.append(pid)
+        if pid in self.kategori_feil:
+            raise OdaFeil("HTTP 503")
+        return self.kategorier.get(pid, ["Test"])
 
     def oppskrift_detaljer(self, oid):
         return {"name": "x", "description": "En god rett.", "ingredients": [], "instructions": ["Stek kjøttet.", "Server."]}
@@ -557,6 +566,36 @@ class TestBilligst(MedData):
         planlegger.optimaliser_priser(self.oda, plan, self.p)  # skal ikke bytte tilbake
         liste = planlegger.handleliste_for(self.oda, plan, self.p)
         self.assertIn(433, [x["produkt"]["id"] for x in liste["kjop"]])
+
+    def test_annen_kategori_byttes_ikke(self):
+        self.oda.kategorier[901] = self.oda.kategorier[903] = ["Middager og tilbehør", "Indisk"]
+        plan = planlegger.lag(self.oda, self.p, UKE, onsket=["3004"])
+        self.assertFalse([b for b in plan["bytter"].values() if b["tittel"] == "Kremfløte"])
+
+    def test_ukjent_kategori_byttes_ikke(self):
+        self.oda.kategori_feil.add(433)  # originalen
+        plan = planlegger.lag(self.oda, self.p, UKE, onsket=["3004"])
+        self.assertFalse([b for b in plan["bytter"].values() if b["tittel"] == "Kremfløte"])
+
+    def test_kategori_caches(self):
+        planlegger.lag(self.oda, self.p, UKE, onsket=["3004"])
+        foer = len(self.oda.kategori_oppslag)
+        self.assertTrue(foer)
+        planlegger.lag(self.oda, self.p, UKE, onsket=["3004"])
+        self.assertEqual(len(self.oda.kategori_oppslag), foer)
+
+    def test_ferdigrett_er_ikke_raavare(self):
+        # Ekte søketreff for "spinat liten" (uke 42): middagskittet ble valgt i stedet for babyspinat
+        orig = {"id": 26252, "name": "Babyspinat Uvasket Norge", "full_name": "Babyspinat Uvasket Norge", "name_extra": "Uvasket Norge, 100 g"}
+        ikke = [
+            _treff(53297, "Masalamagic Linsegryte med spinat Indisk middags-kit med basmariris og lime chutney", "Indisk middags-kit med basmariris og lime chutney, 685 g", 76.8),
+            _treff(65766, "R Tortelloni ricotta og spinat", "250 g", 34.3),
+            _treff(65661, "Bertagni Ravioli Med ricotta og spinat", "Med ricotta og spinat, 250 g", 68.9),
+            _treff(58594, "Juiceriet Kaldpresset Spinatjuice Epler, spinat, agurk, sitron", "Epler, spinat, agurk, sitron, 250 ml", 36.9),
+        ]
+        for k in ikke:
+            self.assertFalse(billigst._passer(k, orig, "Spinat, liten", self.p, tillat_fryst=True), k["name"])
+        self.assertTrue(billigst._passer(_treff(69860, "KUTTA Spinat vasket", "vasket, 200 g", 20), orig, "Spinat, liten", self.p))
 
     def test_allergi_stopper_bytte(self):
         self.oda.produkter["kremfløte"] = [_treff(905, "Kremfløte med nøtter", "3 dl", 10.0)]

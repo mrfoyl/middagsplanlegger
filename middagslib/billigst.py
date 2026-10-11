@@ -6,7 +6,10 @@ merkevareprodukt. Her søker vi etter samme type vare og sammenligner hva
 ikke nok – en stor billig pakke kan gi dyrere handel og mer svinn.
 
 Vi bytter bare når vi er rimelig sikre på at det er samme vare:
-- hovedordet i ingrediensen (f.eks. "pastasaus") må stå i produktnavnet
+- hovedordet i ingrediensen (f.eks. "pastasaus") må stå i produktnavnet, og
+  ikke bare som tilbehør ("Linsegryte med spinat" er ikke spinat)
+- ingen ferdigretter: varen må kunne brukes som råvare i en annen rett
+- samme hovedkategori hos Oda (Frukt og grønt, Kylling og kjøtt …)
 - ingen ord som gjør det til en annen variant (røkt, krydret, bolognese …)
   med mindre originalen også har det
 - ingen treff på familiens allergier/unngå-liste
@@ -35,7 +38,16 @@ ANNEN_VARIANT = (
     "lettsaltet", "laktosefri", "glutenfri", "vegansk", "vegetar", "plantebasert", "snack", "dressing",
     "pulver", "mix", "smak", "saus", "lett", "light", "mager", "sukkerfri", "proteinrik",
     "sandwich", "knekkebrød", "kjeks", "chips", "syltet", "sylte", "skivede", "hakket", "hakkede",
+    "blanding", "miks", "base",
 )
+# Ferdigmat. Ingrediensen må kunne tas ut og brukes i en annen rett.
+FERDIGMAT = (
+    "gryte", "suppe", "pizza", "lasagne", "burger", "pai", "risotto", "curry", "karri", "grateng", "omelett",
+    "middag", "kit", "ferdigrett", "ravioli", "tortelloni", "tortellini", "gnocchi", "juice", "smoothie", "wrap",
+)
+# Ord som gjør resten av navnet til tilbehør: "Linsegryte *med* spinat"
+FORBINDERE = ("med", "og", "i", "til", "på", "uten")
+KATEGORIER = "cache/kategorier.json"
 # Hvis originalen nevner en av disse og kandidaten en annen fra samme gruppe, er det en annen vare
 EKSKLUSIVE_GRUPPER = (
     ("storfe", "svin", "kylling", "lam", "kalkun", "hjort", "elg", "reinsdyr", "okse"),
@@ -53,17 +65,30 @@ def _hovedord(tittel: str) -> str:
     return ord_[0] if ord_ else ""
 
 
+def _hovedord_plass(tekst: str, hoved: str, orig_ord: set):
+    """None hvis hovedordet mangler, ellers True hvis det står etter "med", "og" o.l."""
+    etter_forbinder = False
+    for o in matvarer.norm(tekst).split():
+        if o in FORBINDERE:
+            etter_forbinder = True
+        elif o.startswith(hoved) or (hoved in o and o in orig_ord):
+            return etter_forbinder
+    return None
+
+
 def _har_hovedord(tekst: str, hoved: str, orig_tekst: str) -> bool:
     """Hovedordet må starte et ord ("kjøttboller", "pastasaus").
 
     "Kyllingkjøttboller" er en annen vare enn "kjøttboller", så et forledd
-    godtas bare hvis originalen har det samme sammensatte ordet.
+    godtas bare hvis originalen har det samme sammensatte ordet. Står
+    hovedordet bare etter "med", "og" o.l., er det tilbehør til en annen vare
+    ("Linsegryte med spinat", "Tortelloni ricotta og spinat").
     """
     orig_ord = set(matvarer.norm(orig_tekst).split())
-    for o in matvarer.norm(tekst).split():
-        if o.startswith(hoved) or (hoved in o and o in orig_ord):
-            return True
-    return False
+    plass = _hovedord_plass(tekst, hoved, orig_ord)
+    if plass is None:
+        return False
+    return not plass or bool(_hovedord_plass(orig_tekst, hoved, orig_ord))
 
 
 def _hent_sok(oda, sok: str) -> dict:
@@ -85,7 +110,7 @@ def _passer(kandidat: dict, original: dict, tittel: str, profil: dict, tillat_fr
     hoved = _hovedord(tittel)
     if hoved and not _har_hovedord(tekst, hoved, orig_tekst):
         return False
-    for o in ANNEN_VARIANT:
+    for o in ANNEN_VARIANT + FERDIGMAT:
         if tillat_fryst and o in FRYSEORD:
             continue
         if matvarer.inneholder(tekst, o) and not matvarer.inneholder(orig_tekst, o):
@@ -98,6 +123,26 @@ def _passer(kandidat: dict, original: dict, tittel: str, profil: dict, tillat_fr
     if matvarer.allergen_treff(tekst, profil.get("allergier", []), profil.get("unngaa", [])):
         return False
     return True
+
+
+def _kategori(oda, produkt_id, logg):
+    """Odas kategoristi for produktet, eller None hvis den ikke kan hentes. Caches."""
+    cache = lagring.les(KATEGORIER, {})
+    n = str(produkt_id)
+    if n not in cache:
+        try:
+            cache[n] = oda.produkt_kategori(produkt_id)
+        except OdaFeil as e:
+            logg(f"Fant ikke kategorien til produkt {produkt_id}: {e}")
+            return None
+        lagring.skriv(KATEGORIER, cache)
+    return cache[n] or None
+
+
+def _samme_kategori(oda, kandidat_id, orig_kategori, logg) -> bool:
+    """Samme hovedkategori. Fryst og fersk ligger under samme hovedkategori hos Oda."""
+    k = _kategori(oda, kandidat_id, logg)
+    return bool(k and orig_kategori and k[0] == orig_kategori[0])
 
 
 def _kostnad(behov: float, storrelse: float, pris: float) -> tuple:
@@ -144,7 +189,7 @@ def finn(oda, liste: dict, profil: dict, hopp_over=(), logg=lambda *_: None, spa
                         kandidater.append(k)
             except OdaFeil as e:
                 logg(f"Prissøk for {x['tittel']} feilet: {e}")
-        beste = beste_holdbar = None
+        aktuelle = []
         for k in kandidater:
             if k["id"] == orig["id"] or not k.get("price"):
                 continue
@@ -152,11 +197,20 @@ def finn(oda, liste: dict, profil: dict, hopp_over=(), logg=lambda *_: None, spa
             if not st or st[0] != dim or not _passer(k, orig, x["tittel"], profil, tillat_fryst=spar):
                 continue
             antall, kost = _kostnad(behov, st[1], k["price"])
-            if kort and matvarer.holdbarhet_uapnet(k.get("name", ""), k.get("subtitle", "")) >= matvarer.SPAR_MIN_DAGER:
-                if beste_holdbar is None or kost < beste_holdbar[2]:
-                    beste_holdbar = (k, antall, kost)
-            if beste is None or kost < beste[2]:
-                beste = (k, antall, kost)
+            holdbar = kort and matvarer.holdbarhet_uapnet(k.get("name", ""), k.get("subtitle", "")) >= matvarer.SPAR_MIN_DAGER
+            aktuelle.append((k, antall, kost, holdbar))
+        # Kategorien krever et oppslag per produkt, så sjekk de billigste først
+        aktuelle.sort(key=lambda a: a[2])
+        orig_kategori = _kategori(oda, orig["id"], logg) if aktuelle else None
+        beste = beste_holdbar = None
+        for k, antall, kost, holdbar in aktuelle:
+            if beste and (beste_holdbar or not kort):
+                break
+            if (beste and not holdbar) or not _samme_kategori(oda, k["id"], orig_kategori, logg):
+                continue
+            beste = beste or (k, antall, kost)
+            if holdbar:
+                beste_holdbar = beste_holdbar or (k, antall, kost)
         holdbar_bytte = bool(beste_holdbar and beste_holdbar[2] <= orig_kost * (1 + SPAR_MERPRIS))
         if holdbar_bytte:
             beste = beste_holdbar

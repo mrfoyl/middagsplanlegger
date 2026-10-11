@@ -51,8 +51,8 @@ betyr `har`. Er noe uklart, spør bare om akkurat det.
    - `plan ekstra <produkt-id> [antall] --navn "..." --pris 22.72` legger til varer
      som ikke hører til en rett, for eksempel «vi trenger mer kyllingbuljong». Finn
      ID-en med `produkt sok`. `plan ekstra-fjern <produkt-id>` tar varen ut igjen.
-   - Planleggeren bytter selv til rimeligste likeverdige vare (samme type, ingen
-     annen variant, sammenlignet på faktisk behov). Byttene står under «Byttet til
+   - Planleggeren bytter selv til rimeligste likeverdige vare (samme type og
+     Oda-kategori, ingen annen variant, aldri ferdigmat, sammenlignet på faktisk behov). Byttene står under «Byttet til
      rimeligere». Vil Ole ha originalen: `plan original <vare>`. `plan billigst`
      kjører prissjekken på nytt.
    - Faste ukevarer (bleier, melk …) legges til hver plan. Ligner en av dem noe i
