@@ -6,6 +6,7 @@ Kjør uten argumenter eller med -h for oversikt. Se README.md for flyten.
 """
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -123,7 +124,6 @@ def cmd_lager(a):
 
 
 def _send_whatsapp(melding):
-    import os
     import shutil
     import subprocess
     nr = profil.last().get("whatsapp")
@@ -388,6 +388,7 @@ def parser():
 
 
 def main(argv=None):
+    os.umask(0o077)  # PDF-er, cache og mapper vi lager, skal bare eieren kunne lese
     a = parser().parse_args(argv)
     try:
         a.func(a)

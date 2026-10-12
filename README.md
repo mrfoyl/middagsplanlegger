@@ -175,17 +175,69 @@ plan lag  →  plan vis  →  (avklar / bytt / dobbel / fri)  →  plan godkjenn
 
 ## Sikkerhet
 
+Verktøyet er logget inn på en ekte Oda-konto og styres av en AI-agent. Det er
+bygd for at feil skal være ufarlige, men kontoen bør også settes opp så lite kan
+gå galt.
+
+### Anbefalt oppsett av Oda-kontoen
+
+- **Slett alle lagrede betalingskort i Oda** og betal med
+  Vipps når du bestiller. Da finnes det ikke noe betalingsmiddel på kontoen.
+  Selv om noe skulle klare å trykke «bestill», blir det ingen betaling uten at
+  du godkjenner den i Vipps på telefonen.
+- **Bruk et eget, sterkt passord for Oda** som ikke brukes andre steder.
+  Passordet ligger på maskinen verktøyet kjører på.
+- **Se gjennom kurven før du bestiller.** Planen er laget for å være riktig, men
+  du er siste kontroll. Er noe feil, rett det i chatten (for eksempel
+  `plan erstatt`) eller direkte i Oda.
+
+### Innebygd i verktøyet
+
 - **Aldri bestilling.** mcp-oda har ingen bestill- eller betal-kommando. I tillegg
   sperrer `middagslib/oda.py` alt som ikke står på en hviteliste: tømme kurven,
   fjerne varer, velge leveringstid, slette lister og legge hele oppskrifter i
   kurven forbi lagersjekken. Dette er dekket av tester.
+- **Godkjenning før kurven.** `plan kurv --utfor` virker bare på en godkjent plan,
+  og godkjenningen er bundet til en hash av planens innhold. Enhver endring krever
+  ny godkjenning. Det som allerede er lagt i kurven, legges ikke til på nytt.
 - **Innlogging.** E-post og passord ligger i `~/.config/middag/oda.env` med
   rettighet 600, utenfor repoet. Programmet nekter å lese filen hvis andre kan
   lese den. Passordet sendes til mcp-oda via stdin (`--pass-stdin`), aldri som
-  argument, så det vises ikke i `ps`. Selve sesjonen (cookies) ligger i
-  `~/.mcp-oda/`.
+  argument, så det vises ikke i `ps`.
 - **Ikke gjestekurv.** Uten innlogging gir Oda en anonym kurv. Derfor bekreftes
   innloggingen før kurven leses eller endres.
+- **Private data.** Alt `middag.py` lager i `data/` (familie, allergier, lager,
+  planer, PDF-er), lages med umask 077, så bare eieren kan lese det. `data/` og
+  `*.env` er holdt utenfor git. Logger som cron skriver med `>>`, lages av skallet:
+  sett `umask 077` i crontab eller `chmod 600` på dem.
+- **Låst avhengighet.** mcp-oda er låst til en bestemt commit og bygges med
+  `npm ci` fra lockfilen. En oppdatering fra upstream kommer bare når du endrer
+  `PIN` selv. Les gjennom endringene før du gjør det.
+- **Kategorioppslag uten innlogging.** Produktkategorier hentes fra Odas
+  offentlige produktsider med en vanlig GET, uten cookies eller innlogging.
+
+### Det du må passe på selv
+
+- **Sesjonen er like mye verdt som passordet.** Innloggingen (cookies) ligger i
+  `~/.mcp-oda/`. Den som har filene, er logget inn på kontoen din og ser
+  leveringsadresse og ordrehistorikk. mcp-oda skriver `cookies.json` med
+  rettighet 600, men selve mappen kan bli lesbar for andre. Sett
+  `chmod 700 ~/.mcp-oda` (`scripts/oda-podman.sh` gjør det automatisk).
+- **Agenten har skalltilgang.** Hviteliste og godkjenning gjelder når agenten
+  går gjennom `middag.py`. En agent med fri skalltilgang kan i prinsippet kjøre
+  mcp-oda direkte eller endre koden. Kjør agenten som en egen bruker uten sudo,
+  og la bare deg selv og husstanden snakke med den. I openclaw gjøres det med
+  en hviteliste over telefonnumre.
+- **Prompt injection.** Agenten leser tekst den ikke kontrollerer: oppskrifter,
+  produktnavn, bilder og meldinger. [AGENT.md](AGENT.md) sier at den aldri skal
+  bestille og alltid spørre før kurven fylles. Det er likevel instruksen til en
+  språkmodell, så det er sperrene i koden og en Oda-konto uten lagret kort som
+  er den egentlige beskyttelsen.
+- **Sikkerhetskopier.** `data/`, `oda.env` og `~/.mcp-oda/` inneholder
+  personopplysninger og innlogging. Krypter sikkerhetskopier som inneholder dem,
+  eller hold `oda.env` og `~/.mcp-oda/` utenfor.
+- **Avslutt tilgangen** ved å slette `~/.config/middag/oda.env` og `~/.mcp-oda/`.
+  Bytt også passordet hos Oda hvis maskinen kan være kompromittert.
 
 ## Plattformer
 
