@@ -1,8 +1,59 @@
 # Middagsplanlegger
 
-Ukentlig middagsplan for familien, med handlekurven fylt hos Oda.
+**Si «lag middagsplan for neste uke» i chatten, og få en ferdig ukemeny og en
+fylt handlekurv hos Oda noen minutter senere.**
+
+Middagsplanleggeren tar over de kjedelige delene av ukemiddagene: hva skal vi
+spise, hva har vi fra før, hva må kjøpes, og hva er billigst. Du får en plan som
+passer familien, en handleliste uten dobbeltkjøp og en kurv med rimelige varer.
+Det eneste du gjør selv, er å si ja og trykke «bestill».
+
 **Den bestiller og betaler aldri.** Den legger bare varer i kurven, og du trykker
 «bestill» selv i Oda.
+
+## Hvorfor bruke den?
+
+### Sparer tid
+
+- **Ingen planlegging søndag kveld.** Fem middager velges ut fra hva familien
+  liker, allergier, hvor lang tid du har på hverdager, og hva dere har spist de
+  siste ukene. Du kan bytte en rett eller si «fri fredag» i en setning.
+- **Ingen handleliste å skrive.** Alle ingrediensene for uken slås sammen,
+  lageret hjemme trekkes fra, og varene legges rett i Oda-kurven. Faste varer
+  som bleier, melk og brød kommer med automatisk.
+- **Travle dager er planlagt.** På trening- og aktivitetsdager kommer en rask rett
+  eller rester. Planleggeren lager dobbel porsjon en roligere dag og setter resten
+  av til dagen det trengs.
+- **Oppskriften ligger klar.** Dagens oppskrift kan skrives ut hver morgen, med
+  mengdene regnet om til porsjonene dere faktisk skal lage, og en påminnelse om å
+  ta ut av fryseren.
+- **Alt skjer i chatten.** Du trenger ingen app eller kommandolinje. Send et bilde
+  av kjøleskapet, så legger agenten det inn i lageret.
+
+### Sparer penger
+
+- **Billigste likeverdige vare.** Oppskriftene peker ofte på dyre merkevarer.
+  Planleggeren finner det rimeligste produktet av samme type og sammenligner hva
+  *ukens faktiske behov* koster i hele pakker, ikke bare kiloprisen. Den sjekker at
+  varen er i samme kategori hos Oda og aldri bytter til ferdigmat.
+- **Mindre matsvinn.** Retter som deler ingredienser, velges sammen, så en halv
+  pakke fløte eller en pose spinat blir brukt opp. Ferskvare med kortest
+  holdbarhet lages tidlig i uken etter levering.
+- **Du kjøper ikke det du har.** Lageret holdes oppdatert. Er det usikkert om noe
+  finnes hjemme, spør planleggeren i stedet for å kjøpe en ekstra pakke.
+- **Sparemodus.** «Billig uke» gir retter der varene holder i to uker, med
+  frosne varianter når de koster omtrent det samme. I de første ukene med ekte
+  bruk kom middagene på 21–27 kr per porsjon.
+- **Rimelig pålegg.** Pålegget varierer fra uke til uke og velges blant de
+  billigste per kg i hver kategori. Salamien gikk fra 383 til 172 kr/kg.
+- **Ikke noe tillegg for småbestillinger.** Blir handelen under Odas minstebeløp,
+  legges en frysbar ekstra middag til i stedet for å betale gebyret.
+
+### Trygg
+
+- Den kan ikke bestille eller betale. Det er sperret i koden og dekket av tester.
+- Ingenting legges i kurven før du har sett planen og sagt ja.
+- Passordet til Oda ligger i en egen fil som bare du kan lese, aldri i chatten.
 
 Den er et vanlig kommandolinjeverktøy, men er laget for å brukes av en AI-agent i
 en chat (for eksempel openclaw på WhatsApp). Agenten kjører kommandoene, sender
