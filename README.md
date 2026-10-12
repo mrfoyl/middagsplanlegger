@@ -1,63 +1,148 @@
 # Middagsplanlegger
 
-**Si «lag middagsplan for neste uke» i chatten, og få en ferdig ukemeny og en
-fylt handlekurv hos Oda noen minutter senere.**
-
-Middagsplanleggeren tar over de kjedelige delene av ukemiddagene: hva skal vi
-spise, hva har vi fra før, hva må kjøpes, og hva er billigst. Du får en plan som
-passer familien, en handleliste uten dobbeltkjøp og en kurv med rimelige varer.
-Det eneste du gjør selv, er å si ja og trykke «bestill».
+Planlegger ukens middager for en familie og fyller handlekurven hos Oda. Den
+velger retter, regner ut handlelisten på tvers av rettene, trekker fra det som
+finnes hjemme, bytter til rimeligste likeverdige vare og legger varene i kurven.
+Den er laget for å styres av en AI-agent i en chat, men alt er vanlige
+CLI-kommandoer. Python-standardbibliotek, ingen LLM-kall i koden.
 
 **Den bestiller og betaler aldri.** Den legger bare varer i kurven, og du trykker
 «bestill» selv i Oda.
 
-## Hvorfor bruke den?
+## Design
 
-### Sparer tid
+```mermaid
+flowchart LR
+    B((Bruker)) <-->|chat| A["Chat-agent<br/>(f.eks. openclaw)"]
+    A <-->|CLI, tekst ut| M[middag.py]
 
-- **Ingen planlegging søndag kveld.** Fem middager velges ut fra hva familien
-  liker, allergier, hvor lang tid du har på hverdager, og hva dere har spist de
-  siste ukene. Du kan bytte en rett eller si «fri fredag» i en setning.
-- **Ingen handleliste å skrive.** Alle ingrediensene for uken slås sammen,
-  lageret hjemme trekkes fra, og varene legges rett i Oda-kurven. Faste varer
-  som bleier, melk og brød kommer med automatisk.
-- **Travle dager er planlagt.** På trening- og aktivitetsdager kommer en rask rett
-  eller rester. Planleggeren lager dobbel porsjon en roligere dag og setter resten
-  av til dagen det trengs.
-- **Oppskriften ligger klar.** Dagens oppskrift kan skrives ut hver morgen, med
-  mengdene regnet om til porsjonene dere faktisk skal lage, og en påminnelse om å
-  ta ut av fryseren.
-- **Alt skjer i chatten.** Du trenger ingen app eller kommandolinje. Send et bilde
-  av kjøleskapet, så legger agenten det inn i lageret.
+    subgraph lib [middagslib]
+        P[planlegger<br/>utvalg, dager, godkjenning]
+        H[handleliste<br/>pakker på tvers av retter]
+        L[lager<br/>det vi har hjemme]
+        BI[billigst<br/>prisbytter]
+        PA[palegg<br/>ukens pålegg]
+        K[kalender]
+        R[rapport]
+        U[utskrift]
+        O[oda<br/>hviteliste]
+    end
 
-### Sparer penger
+    M --> P
+    P --> H --> L
+    P --> BI
+    P --> PA
+    P --> K
+    M --> R
+    M --> U
+    BI --> O
+    PA --> O
+    P --> O
 
-- **Billigste likeverdige vare.** Oppskriftene peker ofte på dyre merkevarer.
-  Planleggeren finner det rimeligste produktet av samme type og sammenligner hva
-  *ukens faktiske behov* koster i hele pakker, ikke bare kiloprisen. Den sjekker at
-  varen er i samme kategori hos Oda og aldri bytter til ferdigmat.
-- **Mindre matsvinn.** Retter som deler ingredienser, velges sammen, så en halv
-  pakke fløte eller en pose spinat blir brukt opp. Ferskvare med kortest
-  holdbarhet lages tidlig i uken etter levering.
-- **Du kjøper ikke det du har.** Lageret holdes oppdatert. Er det usikkert om noe
-  finnes hjemme, spør planleggeren i stedet for å kjøpe en ekstra pakke.
-- **Sparemodus.** «Billig uke» gir retter der varene holder i to uker, med
-  frosne varianter når de koster omtrent det samme. I de første ukene med ekte
-  bruk kom middagene på 21–27 kr per porsjon.
-- **Rimelig pålegg.** Pålegget varierer fra uke til uke og velges blant de
-  billigste per kg i hver kategori. Salamien gikk fra 383 til 172 kr/kg.
-- **Ikke noe tillegg for småbestillinger.** Blir handelen under Odas minstebeløp,
-  legges en frysbar ekstra middag til i stedet for å betale gebyret.
+    subgraph ext [Eksternt]
+        MO["mcp-oda<br/>(fork + patcher)"]
+        ODA[(Oda)]
+        GC[(Google-kalender)]
+        CUPS[(CUPS-skriver)]
+    end
 
-### Trygg
+    O -->|"hvitelistede kommandoer"| MO
+    MO --> ODA
+    BI -.->|"kategori fra produktside"| ODA
+    PA -.-> ODA
+    K -.->|Calendar API| GC
+    U -->|lp| CUPS
+    lib <--> D[("data/*.json<br/>profil, lager, plan, cache")]
+```
 
-- Den kan ikke bestille eller betale. Det er sperret i koden og dekket av tester.
-- Ingenting legges i kurven før du har sett planen og sagt ja.
-- Passordet til Oda ligger i en egen fil som bare du kan lese, aldri i chatten.
+Planen har en tilstand som verktøyet håndhever. Enhver endring etter godkjenning
+sender den tilbake til utkast, og godkjenningen er bundet til en hash av planens
+innhold.
 
-Den er et vanlig kommandolinjeverktøy, men er laget for å brukes av en AI-agent i
-en chat (for eksempel openclaw på WhatsApp). Agenten kjører kommandoene, sender
-planen til deg og oversetter svarene dine. Hvordan agenten skal bruke den, står i [AGENT.md](AGENT.md).
+```mermaid
+stateDiagram-v2
+    [*] --> utkast: plan lag
+    utkast --> utkast: bytt / avklar / ekstra / palegg …
+    utkast --> godkjent: plan godkjenn (alt avklart)
+    godkjent --> utkast: enhver endring
+    godkjent --> i_kurv: plan kurv --utfor
+    i_kurv --> ferdig: plan ferdig (eller neste plan lag)
+    ferdig --> [*]: rester → lager, retter → historikk
+```
+
+## Hvorfor det fungerer
+
+- **Handlelisten regnes i pakker, ikke per oppskrift.** Oda oppgir hvor stor
+  andel av en pakke hver porsjon bruker. Andelene summeres per vare for hele
+  uken og rundes opp én gang. To retter med 2 dl og 1 dl fløte gir én kartong.
+- **Rettene velges mot hele uken.** Utvalget er grådig. Hver kandidat får en
+  kostnad: ferskvare som blir til overs (kr), pluss en vektet merpris, pluss
+  straff for samme hovedingrediens, samme rettstype og retter fra de siste tre
+  ukene, og minus bonus for det familien liker. Retter som deler ingredienser,
+  vinner derfor naturlig.
+- **Prisbytter med strenge regler.** For hver vare søkes det etter rimeligere
+  produkter, og kostnaden sammenlignes for ukens faktiske behov i hele pakker.
+  Et bytte krever samme hovedord, ingen annen variant (røkt, laktosefri …), ingen
+  ferdigmat og samme hovedkategori hos Oda. Kategorien leses fra produktsiden og
+  caches.
+- **Lageret er en del av beregningen.** Varer hjemme trekkes fra i mengde der den
+  er kjent. Usikre treff, basisvarer og små andeler gir et spørsmål i stedet for
+  et kjøp. Når uken avsluttes, trekkes forbruket fra og restene legges inn.
+- **Dagene fordeles etter holdbarhet og aktiviteter.** Retter med fisk, kjøttdeig
+  og urter kommer først etter levering. Aktivitetsdager får frossen ferdigmiddag,
+  rest fra en dobbel porsjon eller en rask rett.
+- **Minstebeløpet håndteres.** Er kurven under Odas grense, legges frysbare
+  ekstra middager til. Summen bruker beløpet etter mengderabatter.
+- **Sikkerhet i koden, ikke bare i instruksen.** `oda.py` slipper bare gjennom
+  hvitelistede mcp-oda-kommandoer: ingen bestilling, betaling, tømming, sletting
+  eller leveringstid. Kurven fylles bare fra en godkjent plan, og det som
+  allerede er lagt til, hoppes over ved en ny kjøring. Innlogging bekreftes før
+  kurven røres, så varene ikke havner i en anonym gjestekurv.
+
+## Integrasjoner
+
+| Integrasjon | Hvordan | Valgfri |
+|---|---|---|
+| **Oda** | [mcp-oda](https://github.com/agfagerbakk/mcp-oda), låst til en commit, med egne patcher for ingredienser med produkt-ID og kurvbeløp etter rabatt. Kjøres med Node eller i container | nei |
+| **Google-kalender** | Hendelser i ukens primærkalender med et av søkeordene i tittel eller beskrivelse gjør dagen til aktivitetsdag | ja |
+| **Chat-agent** | Agenten kjører CLI-et og sender teksten videre. [AGENT.md](AGENT.md) er instruksen | ja |
+| **WhatsApp via openclaw** | `lager sjekk --send` sender den ukentlige lagersjekken | ja |
+| **Skriver (CUPS)** | `skriv-ut` lager A4-PDF av dagens oppskrift og sender den med `lp`, typisk fra cron | ja |
+
+Kalenderen slås på slik:
+
+```bash
+python3 middag.py profil sett kalender ja
+python3 middag.py profil sett kalender_sokeord "fotball,svømming,turn"
+```
+
+Den trenger et `gcalendar.py` med `get_creds()` i `MIDDAG_GCALENDAR_DIR` og
+`google-api-python-client`. Feiler oppslaget, brukes de faste aktivitetsdagene,
+og planen lages likevel.
+
+## Tilpasninger
+
+Alt lagres i `data/profil.json` og endres med kommandoer (eller av agenten når du
+sier det i chatten).
+
+| Hva | Kommando |
+|---|---|
+| Familiemedlemmer og alder (porsjoner regnes ut) | `profil medlem-legg-til barn 4`, `profil medlem-alder 3 7`, eller `profil sett porsjoner 5` |
+| Allergier (alvorlige) og ting dere ikke vil ha | `profil legg-til allergier nøtter`, `profil legg-til unngaa sopp` |
+| Det dere liker (søkes først, gir bonus) | `profil legg-til liker taco` |
+| Middagsdager og faste aktivitetsdager | `profil sett middagsdager man,tir,ons,tor,fre`, `profil sett aktivitetsdager tir,tor` |
+| Maks tid, vanlig dag og aktivitetsdag | `profil sett maks_tid_min 40`, `profil sett maks_tid_aktivitetsdag_min 20` |
+| Basisvarer dere alltid har | `profil legg-til alltid_hjemme soyasaus` |
+| **Faste ukevarer** (bleier, melk, brød …) | `profil fast-vare <produkt-id> [antall] --navn "…" --pris 31.9` |
+| **Pålegg:** faste typer, antall tilfeldige, pristak | `palegg faste gulost,brunost,syltetoy`, `palegg antall 3`, `palegg maks-pris 80` |
+| **Svarteliste** for pålegg | `palegg svarteliste <produkt-id>` eller `palegg svarteliste makrell` |
+| Egne oppskrifter | `egen "Fredagstaco" --ingrediens "Kjøttdeig=12345:1" …` |
+| Sparemodus som standard | `profil sett sparemodus ja` |
+| Minstebeløp og maks ekstra middager | `profil sett min_bestilling_kr 1300`, `profil sett maks_ekstra_middager 2` |
+| Skriver | `profil sett skriver <CUPS-kø>` |
+
+Den som bare vil endre noe én uke, bruker plan-kommandoene: `plan bytt`,
+`plan fri`, `plan ekstra`, `plan erstatt`, `plan original`, `plan palegg-bytt`.
 
 ## Flyt
 
@@ -167,14 +252,9 @@ selve byggingen. Bygg en gang i en container eller på en maskin med Node.
 
 ### Kalender (valgfritt)
 
-Aktivitetsdager kan hentes fra Google-kalenderen. Det krever et `gcalendar.py`
-med funksjonen `get_creds()` som gir Google-legitimasjon (openclaw-workspace har
-et slikt). Sett `MIDDAG_GCALENDAR_DIR` til mappen der det ligger, og:
-
-```bash
-python3 middag.py profil sett kalender ja
-python3 middag.py profil sett kalender_sokeord "fotball,svømming,turn"
-```
+Se [Integrasjoner](#integrasjoner). `gcalendar.py` må gi Google-legitimasjon
+med `get_creds()` (openclaw-workspace har et slikt). Sett `MIDDAG_GCALENDAR_DIR`
+til mappen der det ligger.
 
 ### Cron (valgfritt)
 
