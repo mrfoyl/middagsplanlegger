@@ -8,10 +8,10 @@ UKEDAGER = ["man", "tir", "ons", "tor", "fre", "lør", "søn"]
 
 STANDARD = {
     "medlemmer": [
-        {"beskrivelse": "mann", "alder": 39},
-        {"beskrivelse": "kvinne", "alder": 36},
-        {"beskrivelse": "gutt", "alder": 6},
-        {"beskrivelse": "jente", "alder": 3},
+        {"beskrivelse": "voksen", "alder": 40},
+        {"beskrivelse": "voksen", "alder": 40},
+        {"beskrivelse": "barn", "alder": 8},
+        {"beskrivelse": "barn", "alder": 4},
     ],
     "allergier": [],
     "unngaa": [],
@@ -24,7 +24,7 @@ STANDARD = {
     "porsjoner": None,
     "barnevennlig": True,
     "sparemodus": False,
-    "skriver": "Brother-HL-L2400DW",
+    "skriver": None,  # None: systemets standardskriver
     "whatsapp": None,
     "alltid_hjemme": ["salt", "havsalt", "pepper", "olje", "rapsolje", "olivenolje", "stekeolje", "sukker", "hvetemel", "vann"],
     "faste_varer": [],

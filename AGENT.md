@@ -1,25 +1,31 @@
-# Middagsplanlegger – instruks for Kølla
+# Middagsplanlegger – instruks for chat-agenten
 
-Verktøy: `python3 ~/.openclaw/workspace/middagsplanlegger/middag.py <kommando>`.
-Utskriften er WhatsApp-formatert og kan sendes rett til Ole.
+Instruks for en AI-agent som bruker verktøyet på vegne av brukeren i en
+chat (WhatsApp, Telegram, Signal o.l.). Pek agenten hit fra dens egen
+instruksfil, se README under «Agent».
+
+Verktøy: `python3 <installasjonsmappe>/middag.py <kommando>`.
+Utskriften bruker chat-formatering (`*fet*`, korte linjer) og kan sendes rett
+til brukeren.
 
 ## Absolutte regler
 
 1. **Aldri bestill eller betal.** Verktøyet kan ikke, og du skal ikke prøve med
-   andre midler, heller ikke via mcp-oda direkte. Ole trykker «bestill» selv.
-2. **Ikke legg noe i kurven før Ole har sett planen og sagt ja.** `plan kurv --utfor` kjøres
-   bare etter at Ole eksplisitt har godkjent planen i denne samtalen.
+   andre midler, heller ikke via mcp-oda direkte. Brukeren trykker «bestill» selv.
+2. **Ikke legg noe i kurven før brukeren har sett planen og sagt ja.** `plan kurv --utfor` kjøres
+   bare etter at brukeren eksplisitt har godkjent planen i denne samtalen.
 3. **Spør heller enn å gjette** om hva som finnes hjemme. Svar på `❓ Må avklares`
-   med det Ole sier, ikke med antagelser.
+   med det brukeren sier, ikke med antagelser.
 4. Allergier i profilen er alvorlige. Allergenfilteret leter etter nøkkelord, så
    les ingredienslisten (`oppskrift vis <ref>`) før du foreslår en rett du er
    usikker på.
 
 ## Avklaringer: still dem som vanlig melding
 
-**Ikke bruk spørsmålsverktøyet** (ask/question) til avklaringer, lagersjekk eller
-faste varer. Openclaw krever da ett svar per linje, og at hvert svar matcher et
-alternativ. Ett ubesvart spørsmål avviser hele svaret, og Ole blir sittende fast.
+**Ikke bruk et innebygd spørsmålsverktøy** (ask/question) til avklaringer,
+lagersjekk eller faste varer. I openclaw krever det ett svar per linje, og at
+hvert svar matcher et alternativ. Ett ubesvart spørsmål avviser hele svaret, og
+brukeren blir sittende fast.
 
 Skriv i stedet spørsmålene som en nummerert liste i en vanlig melding, og godta
 fritekst. Eksempler på svar du må forstå:
@@ -34,11 +40,11 @@ betyr `har`. Er noe uklart, spør bare om akkurat det.
 
 1. `plan lag`. Uke-planen for neste uke. Valgfritt:
    - `--aktivitet tir,tor` for ekstra aktivitetsdager denne uken
-   - `--oppskrifter oda:3004,egen:taco` hvis Ole ønsker bestemte retter
+   - `--oppskrifter oda:3004,egen:taco` hvis brukeren ønsker bestemte retter
    - `--uke 2026-W43` for en annen uke
-   - Ber Ole om «billig uke», «spareuke» eller mat som holder lenge, bruk
+   - Ber brukeren om «billig uke», «spareuke» eller mat som holder lenge, bruk
      `--spar`. Si fra hva som bør fryses ved levering (står i planen).
-2. Send planen til Ole. Gjør endringene Ole ber om:
+2. Send planen til brukeren. Gjør endringene brukeren ber om:
    - `plan bytt <dag> <ref>` setter en annen rett. `oppskrift sok <ord>` gir
      forslag.
    - `plan dobbel <kokedag> <restdag>` lager dobbel porsjon og legger resten på
@@ -53,20 +59,20 @@ betyr `har`. Er noe uklart, spør bare om akkurat det.
      ID-en med `produkt sok`. `plan ekstra-fjern <produkt-id>` tar varen ut igjen.
    - Planleggeren bytter selv til rimeligste likeverdige vare (samme type og
      Oda-kategori, ingen annen variant, aldri ferdigmat, sammenlignet på faktisk behov). Byttene står under «Byttet til
-     rimeligere». Vil Ole ha originalen: `plan original <vare>`. `plan billigst`
+     rimeligere». Vil brukeren ha originalen: `plan original <vare>`. `plan billigst`
      kjører prissjekken på nytt.
    - Faste ukevarer (bleier, melk …) legges til hver plan. Ligner en av dem noe i
-     lageret, får den ❓. Spør Ole og svar med `plan avklar <vare> har|kjop`.
+     lageret, får den ❓. Spør brukeren og svar med `plan avklar <vare> har|kjop`.
      Svaret «har» tar varen ut av denne ukas handel.
    - Når planen legger til en ekstra fryse-middag for å nå minstebeløpet, står det
      hvilken dag den skal lages. Oppskriften skrives ut den dagen. Når uka er
-     slutt, ligger den i fryseren med ❓ til Ole bekrefter med
+     slutt, ligger den i fryseren med ❓ til brukeren bekrefter med
      `lager ok <navn>`. Først da brukes den på en aktivitetsdag.
-3. Når Ole sier at planen ser bra ut: `plan godkjenn`. Det viser hva som legges
-   i kurven («før»). Send det til Ole.
-4. Når Ole sier «legg i kurven» eller lignende: `plan kurv --utfor`. Send «etter»-
+3. Når brukeren sier at planen ser bra ut: `plan godkjenn`. Det viser hva som legges
+   i kurven («før»). Send det til brukeren.
+4. Når brukeren sier «legg i kurven» eller lignende: `plan kurv --utfor`. Send «etter»-
    oppsummeringen.
-   - Ligger noen varer allerede i kurven og Ole vil unngå dobbelt opp, bruk
+   - Ligger noen varer allerede i kurven og brukeren vil unngå dobbelt opp, bruk
      `plan kurv --utfor --trekk-fra-kurv`.
    - Hvis noe feilet: kjør samme kommando igjen. Det som allerede ble lagt til,
      hoppes over.
@@ -82,7 +88,7 @@ Planen har en egen del «Pålegg denne uken». Den velges automatisk: faste type
 (gulost, brunost) pluss tre tilfeldige, rimelige per kg. Ikke legg pålegg inn som
 faste varer eller med `plan ekstra`. Det er velgerens jobb.
 
-| Ole sier | Kommando |
+| Brukeren sier | Kommando |
 |---|---|
 | «Ingen liker den leverposteien» | `palegg svarteliste <produkt-id>` (ID-en står i planen) |
 | «Ikke kjøp makrell i tomat igjen» | `palegg svarteliste makrell` |
@@ -96,41 +102,42 @@ Er den allerede i kurven, gjelder svartelisten fra neste uke.
 
 ## Utskrift
 
-Cron skriver ut dagens oppskrift kl. 07 på Brother-laseren. Når Ole ber om det:
+Er utskrift satt opp i cron, skrives dagens oppskrift ut hver morgen. Når
+brukeren ber om det:
 - «Skriv ut oppskriften for fredag» → `skriv-ut --dag fre`
 - «Skriv ut i dag igjen» → `skriv-ut --igjen`
-- «Bruk Epson-skriveren» → `profil sett skriver Epson-ET-1810`
+- «Bruk den andre skriveren» → `profil sett skriver <CUPS-kø>` (`lpstat -p` viser køene)
 
 ## Lager: det vi har hjemme
 
-- Ole skriver «vi har melk, 1 kg kjøttdeig og løk»:
+- Brukeren skriver «vi har melk, 1 kg kjøttdeig og løk»:
   `lager legg-til "melk" "kjøttdeig=1 kg" "løk"`
-- Ole sender et **bilde** av kjøleskapet, skapet eller en kvittering: les selv
+- Brukeren sender et **bilde** av kjøleskapet, skapet eller en kvittering: les selv
   hvilke varer du ser, og legg dem til med mengde der den er tydelig. Si hva
   du la til, og hva du var usikker på. Gjett ikke på uleselige varer, spør.
-- Ole skriver «vi er tomme for melk»: `lager fjern melk`
+- Brukeren skriver «vi er tomme for melk»: `lager fjern melk`
 - Middag i fryseren: `lager legg-til "kjøttsaus" --fryst-middag 4`
   (antall porsjoner). Den brukes automatisk på en aktivitetsdag.
 - `lager vis` viser hele lageret. ❓ betyr at varen bør bekreftes.
-- Søndagens lagersjekk spør Ole om varer som kan være for gamle eller oppbrukt.
-  Ole svarer for eksempel «paprika tom, løk har vi». Da kjører du
+- Den ukentlige lagersjekken spør brukeren om varer som kan være for gamle eller oppbrukt.
+  Brukeren svarer for eksempel «paprika tom, løk har vi». Da kjører du
   `lager fjern paprika` og `lager ok løk`.
-- Gammel ferskvare fjernes automatisk, men tørrvarer aldri. Si fra til Ole om
+- Gammel ferskvare fjernes automatisk, men tørrvarer aldri. Si fra til brukeren om
   hva som ble fjernet når `plan lag` melder det.
 
 ## Familieprofil
 
-`profil vis`. Endres når Ole sier fra:
+`profil vis`. Endres når Brukeren sier fra:
 
-| Ole sier | Kommando |
+| Brukeren sier | Kommando |
 |---|---|
-| «Jente har nøtteallergi» | `profil legg-til allergier nøtter` |
+| «Datteren har nøtteallergi» | `profil legg-til allergier nøtter` |
 | «Vi vil ikke ha sopp» | `profil legg-til unngaa sopp` |
 | «Ungene elsker taco» | `profil legg-til liker taco` |
 | «Fotball tirsdag og torsdag» | `profil sett aktivitetsdager tir,tor` |
 | «Middag også i helgene» | `profil sett middagsdager man,tir,ons,tor,fre,lør,søn` |
 | «Maks 30 min på hverdager» | `profil sett maks_tid_min 30` |
-| «Gutten har fylt 7» | `profil medlem-alder 3 7` (medlem nr. 3) |
+| «Sønnen har fylt 7» | `profil medlem-alder 3 7` (medlem nr. 3) |
 | «Lag til 5 porsjoner» | `profil sett porsjoner 5` (`auto` for beregnet) |
 | «Hent aktiviteter fra kalenderen» | `profil sett kalender ja` + `profil sett kalender_sokeord "fotball,turn"` |
 | «Vi har alltid soyasaus» | `profil legg-til alltid_hjemme soyasaus` |
@@ -140,7 +147,7 @@ skalldyr, soya, sesam, selleri, sennep. Alt annet matches som fritekst.
 
 ## Egne oppskrifter
 
-Når Ole beskriver en rett som ikke finnes hos Oda:
+Når brukeren beskriver en rett som ikke finnes hos Oda:
 
 1. Finn produktene: `produkt sok kjøttdeig` osv.
 2. `egen "Fredagstaco" --porsjoner 4 --minutter 25 --instruksjoner "1. Stek ... 2. ..."
@@ -148,13 +155,14 @@ Når Ole beskriver en rett som ikke finnes hos Oda:
    - Formatet er `Tittel=produkt-ID:pakker for hele oppskriften`. Bare tittel
      betyr basisvare.
    - Legg til `--frysbar` hvis retten tåler frysing.
-3. Valgfritt, og bare hvis Ole vil ha den i Oda-appen: `oppskrift egen-synk egen:fredagstaco`.
+3. Valgfritt, og bare hvis brukeren vil ha den i Oda-appen: `oppskrift egen-synk egen:fredagstaco`.
    Da lagres den under Oppskrifter → Dine middager.
 4. Bruk den i en plan: `plan lag --oppskrifter egen:fredagstaco` eller `plan bytt fre egen:fredagstaco`.
 
 ## Feil
 
-- «Mangler …/oda.env» eller «Innlogging feilet»: be Ole kjøre
-  `scripts/sett_oda_passord.sh` på Pi-en. Be aldri om passordet i chatten.
+- «Mangler …/oda.env» eller «Innlogging feilet»: be brukeren kjøre
+  `scripts/sett_oda_passord.sh` på maskinen verktøyet kjører på. Be aldri om
+  passordet i chatten.
 - «rettighet 0o644»: kjør `chmod 600 ~/.config/middag/oda.env`.
 - Feil fra Oda-søk: prøv igjen senere. Oppskrifter caches i 14 dager.

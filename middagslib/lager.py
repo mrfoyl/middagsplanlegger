@@ -1,4 +1,4 @@
-"""Det vi har hjemme. En enkel JSON-liste som oppdateres når Ole sier fra.
+"""Det vi har hjemme. En enkel JSON-liste som oppdateres når brukeren sier fra.
 
 To typer oppføringer:
 - vare: {"navn": "gul løk", "mengde": "1 kg" | null}
@@ -79,7 +79,7 @@ def tom() -> int:
 
 
 def ferdigmiddager(varer=None) -> list:
-    # Ubekreftede (sjekk) regnes ikke med før Ole har sagt at de faktisk ligger i fryseren
+    # Ubekreftede (sjekk) regnes ikke med før brukeren har sagt at de faktisk ligger i fryseren
     return [v for v in (varer if varer is not None else last())
             if v.get("fryst_middag") and v.get("porsjoner", 0) > 0 and not v.get("sjekk")]
 
@@ -186,7 +186,7 @@ def rydd_utgatt(idag: dt.date = None) -> list:
 
 
 def til_sjekk(idag: dt.date = None) -> list:
-    """Varer Ole bør bekrefte: ferskvare forbi holdbarhet, og varer merket etter bruk."""
+    """Varer brukeren bør bekrefte: ferskvare forbi holdbarhet, og varer merket etter bruk."""
     ut = []
     for v in last():
         if v.get("sjekk"):
@@ -199,7 +199,7 @@ def til_sjekk(idag: dt.date = None) -> list:
 
 
 def ok(navn: str) -> bool:
-    """Ole bekrefter at varen fortsatt finnes og er god: ny dato, ingen sjekk-merking."""
+    """Brukeren bekrefter at varen fortsatt finnes og er god: ny dato, ingen sjekk-merking."""
     varer = last()
     i = _finn_indeks(varer, navn)
     if i is None:

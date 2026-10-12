@@ -792,7 +792,7 @@ def til_kurv(oda, plan: dict, p: dict, trekk_fra_kurv: bool = False) -> dict:
         if plan.get("godkjent_hash") != _hash(plan):
             raise ValueError("Planen er endret etter forrige forsøk. Kjør plan gjenapne og godkjenn på nytt.")
     elif not er_godkjent(plan):
-        raise ValueError("Planen er ikke godkjent (eller endret etter godkjenning). Vis planen for Ole og kjør plan godkjenn først.")
+        raise ValueError("Planen er ikke godkjent (eller endret etter godkjenning). Vis planen for brukeren og kjør plan godkjenn først.")
     kp = kurvplan(oda, plan, p, trekk_fra_kurv)
     if kp["liste"]["usikre"]:
         raise ValueError("Det finnes uavklarte varer. Kjør plan vis.")

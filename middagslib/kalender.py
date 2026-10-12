@@ -1,4 +1,6 @@
-"""Hent aktivitetsdager fra Google-kalenderen via gcalendar.py i openclaw-workspace.
+"""Hent aktivitetsdager fra Google-kalenderen via et gcalendar.py med get_creds().
+
+Mappen settes med MIDDAG_GCALENDAR_DIR (standard: openclaw-workspace, som har et slikt skript).
 
 Valgfritt: slås på med `profil sett kalender ja` og søkeord som
 `profil sett kalender_sokeord "fotball,svømming,turn"`. Feiler stille med en

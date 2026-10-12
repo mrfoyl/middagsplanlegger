@@ -67,7 +67,7 @@ class FalskOda:
     def sikre_innlogget(self):
         if not self.innlogget:
             raise OdaFeil("Mangler legitimasjon")
-        return "Logged in as: Ole"
+        return "Logged in as: Test"
 
     def legg_i_kurv(self, pid, antall):
         if pid in self.feil_for:
@@ -402,7 +402,7 @@ class TestPlan(MedData):
         meldinger = planlegger.ferdig(self.oda, plan, p)
         for x in plan["ekstra_middager"]:
             self.assertTrue(any(x["navn"] in m for m in meldinger))
-        # Registreres i fryseren, men teller først som ferdigmiddag når Ole har bekreftet den
+        # Registreres i fryseren, men teller først som ferdigmiddag når brukeren har bekreftet den
         fryste_navn = {v["navn"] for v in lager.last() if v.get("fryst_middag")}
         for x in plan["ekstra_middager"]:
             self.assertIn(x["navn"], fryste_navn)
@@ -508,9 +508,9 @@ class TestKurvflyt(MedData):
             tilstand["kall"].append(args[:2])
             if args[:2] == ["auth", "login"]:
                 tilstand["inne"] = True
-                return 0, "", "Successfully logged in as: Ole"
+                return 0, "", "Successfully logged in as: Test"
             if args[:2] == ["auth", "user"]:
-                return 0, "", "Logged in as: Ole" if tilstand["inne"] else "Not logged in."
+                return 0, "", "Logged in as: Test" if tilstand["inne"] else "Not logged in."
             return 0, "{}", ""
 
         with tempfile.TemporaryDirectory() as d:
@@ -863,7 +863,7 @@ class TestOdaSikkerhet(unittest.TestCase):
             self.assertNotRegex(navn.lower(), "bestill|checkout|order|betal|pay|purchase")
 
     def test_passord_via_stdin_ikke_argument(self):
-        self.fil.write_text("ODA_EMAIL=ole@example.com\nODA_PASSWORD=hemmelig123\n")
+        self.fil.write_text("ODA_EMAIL=test@example.com\nODA_PASSWORD=hemmelig123\n")
         self.fil.chmod(0o600)
         self._oda().logg_inn()
         args, stdin = self.kall[0]

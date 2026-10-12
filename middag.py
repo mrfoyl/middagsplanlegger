@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Familie-middagsplanlegger som fyller handlekurven på Oda – men aldri bestiller.
 
-Kalles av agenten (Kølla) på samme måte som listonic.py. Kjør uten argumenter
-eller med -h for oversikt. Se README.md for flyten.
+Laget for å kalles av en chat-agent (se AGENT.md), men kan også brukes direkte.
+Kjør uten argumenter eller med -h for oversikt. Se README.md for flyten.
 """
 import argparse
 import json

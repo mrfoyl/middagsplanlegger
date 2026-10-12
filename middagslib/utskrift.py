@@ -1,6 +1,6 @@
 """Skriv ut dagens oppskrift på skriveren (CUPS via `lp`).
 
-Tenkt kjørt fra cron på openclaw hver morgen: finner dagens rett i planen,
+Tenkt kjørt fra cron hver morgen: finner dagens rett i planen,
 lager en A4-PDF med ingredienser skalert til porsjonene som skal lages (dobbelt
 på dobbeldager), fremgangsmåte, produktbytter og påminnelse om å ta ut fra
 fryseren. Hver dag skrives bare ut én gang, med mindre man ber om det.

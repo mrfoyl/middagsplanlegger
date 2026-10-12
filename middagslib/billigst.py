@@ -14,7 +14,7 @@ Vi bytter bare når vi er rimelig sikre på at det er samme vare:
   med mindre originalen også har det
 - ingen treff på familiens allergier/unngå-liste
 - pakkestørrelsen må kunne leses og sammenlignes med behovet
-Byttene vises i planen, og Ole kan angre med `plan original <vare>`.
+Byttene vises i planen og kan angres med `plan original <vare>`.
 """
 import math
 import time

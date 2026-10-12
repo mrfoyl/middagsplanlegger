@@ -1,4 +1,4 @@
-"""Tekst for WhatsApp: *fet* skrift, korte linjer, norsk."""
+"""Tekst for chat (WhatsApp o.l.): *fet* skrift, korte linjer, norsk."""
 import datetime as dt
 
 from . import matvarer

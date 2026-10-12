@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Kjør mcp-oda i en Node-container – for maskiner uten Node (f.eks. Bazzite).
+# Kjør mcp-oda i en Node-container – for maskiner uten Node (f.eks. immutable distroer).
 # Sesjonen (cookies) lagres i ~/.mcp-oda, akkurat som ved vanlig kjøring.
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -7,6 +7,8 @@ mkdir -p "$HOME/.mcp-oda"
 chmod 700 "$HOME/.mcp-oda"
 if command -v podman >/dev/null; then
   RUN=(podman)
+elif command -v docker >/dev/null; then
+  RUN=(docker)
 else
   RUN=(flatpak-spawn --host podman)  # fra innsiden av en flatpak, f.eks. VS Code
 fi
