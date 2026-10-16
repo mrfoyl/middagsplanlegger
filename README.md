@@ -25,7 +25,7 @@ flowchart LR
         K[kalender]
         R[rapport]
         U[utskrift]
-        O[oda<br/>hviteliste]
+        O[oda / oda_klient<br/>sperre for POST]
     end
 
     M --> P
@@ -40,14 +40,12 @@ flowchart LR
     P --> O
 
     subgraph ext [Eksternt]
-        MO["mcp-oda<br/>(fork + patcher)"]
         ODA[(Oda)]
         GC[(Google-kalender)]
         CUPS[(CUPS-skriver)]
     end
 
-    O -->|"hvitelistede kommandoer"| MO
-    MO --> ODA
+    O -->|"HTTPS, bare tillatte kall"| ODA
     BI -.->|"kategori fra produktside"| ODA
     PA -.-> ODA
     K -.->|Calendar API| GC
@@ -93,9 +91,9 @@ stateDiagram-v2
   rest fra en dobbel porsjon eller en rask rett.
 - **Minstebeløpet håndteres.** Er kurven under Odas grense, legges frysbare
   ekstra middager til. Summen bruker beløpet etter mengderabatter.
-- **Sikkerhet i koden, ikke bare i instruksen.** `oda.py` slipper bare gjennom
-  hvitelistede mcp-oda-kommandoer: ingen bestilling, betaling, tømming, sletting
-  eller leveringstid. Kurven fylles bare fra en godkjent plan, og det som
+- **Sikkerhet i koden, ikke bare i instruksen.** Oda-klienten har ingen metoder
+  for bestilling, betaling, tømming, sletting eller leveringstid, og POST-kall
+  utenfor en hviteliste eller med negative mengder sperres. Kurven fylles bare fra en godkjent plan, og det som
   allerede er lagt til, hoppes over ved en ny kjøring. Innlogging bekreftes før
   kurven røres, så varene ikke havner i en anonym gjestekurv.
 
@@ -103,7 +101,7 @@ stateDiagram-v2
 
 | Integrasjon | Hvordan | Valgfri |
 |---|---|---|
-| **Oda** | [mcp-oda](https://github.com/agfagerbakk/mcp-oda), låst til en commit, med egne patcher for ingredienser med produkt-ID og kurvbeløp etter rabatt. Kjøres med Node eller i container | nei |
+| **Oda** | Egen HTTP-klient i Python (`oda_klient.py`), portert fra [mcp-oda](https://github.com/agfagerbakk/mcp-oda). Leser Odas Next.js-sider og REST-API-et. Ingen Node | nei |
 | **Google-kalender** | Hendelser i ukens primærkalender med et av søkeordene i tittel eller beskrivelse gjør dagen til aktivitetsdag | ja |
 | **Chat-agent** | Agenten kjører CLI-et og sender teksten videre. [AGENT.md](AGENT.md) er instruksen | ja |
 | **WhatsApp via openclaw** | `lager sjekk --send` sender den ukentlige lagersjekken | ja |
@@ -193,39 +191,43 @@ gå galt.
 
 ### Innebygd i verktøyet
 
-- **Aldri bestilling.** mcp-oda har ingen bestill- eller betal-kommando. I tillegg
-  sperrer `middagslib/oda.py` alt som ikke står på en hviteliste: tømme kurven,
-  fjerne varer, velge leveringstid, slette lister og legge hele oppskrifter i
-  kurven forbi lagersjekken. Dette er dekket av tester.
+- **Aldri bestilling.** Oda-klienten (`middagslib/oda_klient.py`) har bare
+  operasjonene planleggeren trenger. Den kan ikke bestille, betale, tømme
+  kurven, fjerne varer, velge leveringstid eller slette lister, for den koden
+  finnes ikke. I tillegg går alle POST-kall gjennom en sperre som bare godtar
+  kjente endepunkter og positive mengder av enkeltprodukter. Dette er dekket av
+  tester.
 - **Godkjenning før kurven.** `plan kurv --utfor` virker bare på en godkjent plan,
   og godkjenningen er bundet til en hash av planens innhold. Enhver endring krever
   ny godkjenning. Det som allerede er lagt i kurven, legges ikke til på nytt.
 - **Innlogging.** E-post og passord ligger i `~/.config/middag/oda.env` med
   rettighet 600, utenfor repoet. Programmet nekter å lese filen hvis andre kan
-  lese den. Passordet sendes til mcp-oda via stdin (`--pass-stdin`), aldri som
-  argument, så det vises ikke i `ps`.
+  lese den. Passordet sendes bare i innloggingskallet til oda.com over HTTPS,
+  aldri som argument til et annet program.
+- **Cookies bare til oda.com.** Klienten nekter å sende cookies til andre
+  adresser, også når Oda omdirigerer eller paginerer.
 - **Ikke gjestekurv.** Uten innlogging gir Oda en anonym kurv. Derfor bekreftes
   innloggingen før kurven leses eller endres.
 - **Private data.** Alt `middag.py` lager i `data/` (familie, allergier, lager,
   planer, PDF-er), lages med umask 077, så bare eieren kan lese det. `data/` og
   `*.env` er holdt utenfor git. Logger som cron skriver med `>>`, lages av skallet:
   sett `umask 077` i crontab eller `chmod 600` på dem.
-- **Låst avhengighet.** mcp-oda er låst til en bestemt commit og bygges med
-  `npm ci` fra lockfilen. En oppdatering fra upstream kommer bare når du endrer
-  `PIN` selv. Les gjennom endringene før du gjør det.
+- **Ingen eksterne avhengigheter.** Oda-delen er ren Python-standardbibliotek.
+  Det finnes ingen npm-pakker eller andre tredjepartspakker som kan endre seg
+  under deg.
 - **Kategorioppslag uten innlogging.** Produktkategorier hentes fra Odas
   offentlige produktsider med en vanlig GET, uten cookies eller innlogging.
 
 ### Det du må passe på selv
 
 - **Sesjonen er like mye verdt som passordet.** Innloggingen (cookies) ligger i
-  `~/.mcp-oda/`. Den som har filene, er logget inn på kontoen din og ser
-  leveringsadresse og ordrehistorikk. mcp-oda skriver `cookies.json` med
-  rettighet 600, men selve mappen kan bli lesbar for andre. Sett
-  `chmod 700 ~/.mcp-oda` (`scripts/oda-podman.sh` gjør det automatisk).
+  `~/.config/middag/oda-cookies.json` med rettighet 600. Den som har filen, er
+  logget inn på kontoen din og ser leveringsadresse og ordrehistorikk. Har du
+  brukt en tidligere versjon med mcp-oda, flyttes sesjonen fra
+  `~/.mcp-oda/cookies.json` automatisk. Slett den gamle mappen etterpå.
 - **Agenten har skalltilgang.** Hviteliste og godkjenning gjelder når agenten
-  går gjennom `middag.py`. En agent med fri skalltilgang kan i prinsippet kjøre
-  mcp-oda direkte eller endre koden. Kjør agenten som en egen bruker uten sudo,
+  går gjennom `middag.py`. En agent med fri skalltilgang kan i prinsippet lese
+  sesjonsfilen og kalle Oda selv, eller endre koden. Kjør agenten som en egen bruker uten sudo,
   og la bare deg selv og husstanden snakke med den. I openclaw gjøres det med
   en hviteliste over telefonnumre.
 - **Prompt injection.** Agenten leser tekst den ikke kontrollerer: oppskrifter,
@@ -233,27 +235,26 @@ gå galt.
   bestille og alltid spørre før kurven fylles. Det er likevel instruksen til en
   språkmodell, så det er sperrene i koden og en Oda-konto uten lagret kort som
   er den egentlige beskyttelsen.
-- **Sikkerhetskopier.** `data/`, `oda.env` og `~/.mcp-oda/` inneholder
+- **Sikkerhetskopier.** `data/` og `~/.config/middag/` inneholder
   personopplysninger og innlogging. Krypter sikkerhetskopier som inneholder dem,
-  eller hold `oda.env` og `~/.mcp-oda/` utenfor.
-- **Avslutt tilgangen** ved å slette `~/.config/middag/oda.env` og `~/.mcp-oda/`.
-  Bytt også passordet hos Oda hvis maskinen kan være kompromittert.
+  eller hold `~/.config/middag/` utenfor.
+- **Avslutt tilgangen** ved å slette `~/.config/middag/oda.env` og
+  `~/.config/middag/oda-cookies.json`. Bytt også passordet hos Oda hvis maskinen
+  kan være kompromittert.
 
 ## Plattformer
 
 | Plattform | Status |
 |---|---|
 | Linux, x86_64 og arm64 (Debian, Ubuntu, Fedora, Raspberry Pi OS 64-bit …) | Støttet. Testet på Debian 13 på Raspberry Pi (arm64) og en Fedora-basert desktop |
-| Immutable Linux (Fedora Silverblue o.l.) eller maskin uten Node | Støttet. mcp-oda kjøres i en container, se [Maskin uten Node](#maskin-uten-node) |
-| macOS | Bør virke (Python og Node fra Homebrew, utskrift via innebygd CUPS), men er ikke testet |
-| Windows | Ikke direkte: skriptene er bash, og passordfilen sjekkes med Unix-rettigheter. Bruk WSL 2 (Ubuntu), da gjelder Linux-raden |
+| Immutable Linux (Fedora Silverblue o.l.) | Støttet. Bare Python trengs |
+| macOS | Bør virke (Python fra Homebrew eller python.org, utskrift via innebygd CUPS), men er ikke testet |
+| Windows | Ikke direkte: passordfilen sjekkes med Unix-rettigheter, og utskrift bruker CUPS. Bruk WSL 2 (Ubuntu), da gjelder Linux-raden |
 
 Krav:
 
 - **Python 3.10+.** Bare standardbiblioteket, bortsett fra `reportlab` for
   PDF-utskrift (valgfritt, se [Utskrift](#utskrift)).
-- **Node 18+ og npm** for å bygge og kjøre mcp-oda, *eller* podman/Docker.
-- **git** for å hente mcp-oda.
 - **CUPS** (`lp`) bare hvis oppskrifter skal skrives ut.
 - **En Oda-konto.** Oda leverer i deler av Norge, og verktøyet bruker den
   norske nettbutikken (oda.com/no).
@@ -268,14 +269,12 @@ samme maskin. En liten, alltid påslått maskin som en Raspberry Pi passer godt.
 ```bash
 git clone https://github.com/mrfoyl/middagsplanlegger.git
 cd middagsplanlegger
-scripts/setup_oda.sh          # kloner mcp-oda, legger på patchene, bygger
 scripts/sett_oda_passord.sh   # spør om e-post/passord, skriver oda.env (600)
 python3 middag.py oda login   # tester innloggingen
 python3 tests/test_middag.py  # alle tester, uten nettverk
 ```
 
-Oppdatering: `git pull` og deretter `scripts/setup_oda.sh`. Skriptet legger også
-på nye patcher på en eksisterende installasjon.
+Oppdatering: `git pull`. Det finnes ikke noe annet å bygge.
 
 Første gang lages `data/profil.json` med en standardfamilie (to voksne og to
 barn). Tilpass den med `profil …`-kommandoene, se [AGENT.md](AGENT.md#familieprofil).
@@ -293,14 +292,6 @@ instruksfil (i openclaw: `AGENTS.md` i workspace, under «Tools»), for eksempel
 Middagsplan, lager og Oda-handlekurv: `python3 <sti>/middagsplanlegger/middag.py`.
 Les `middagsplanlegger/AGENT.md` før du bruker den.
 ```
-
-### Maskin uten Node
-
-Finnes ikke `node`, kjører `middagslib/oda.py` mcp-oda i en `node:24-slim`-container
-via `scripts/oda-podman.sh` (podman, ellers Docker). Sesjonen lagres fortsatt i
-`~/.mcp-oda`. Fra innsiden av en flatpak (for eksempel VS Code) brukes
-`flatpak-spawn --host podman`. `scripts/setup_oda.sh` trenger likevel npm for
-selve byggingen. Bygg en gang i en container eller på en maskin med Node.
 
 ### Kalender (valgfritt)
 
@@ -385,8 +376,8 @@ Planen dekker fortsatt én uke av gangen.
   aktivitetsdag. Varer som planen selv allerede har lagt i kurven, teller ikke
   med i sjekken.
 - **Mengderabatter:** Odas kurv-sum (`display_price`) trekker ikke fra
-  kampanjer som «2 for 1». Patch `0002` til mcp-oda leser det reelle beløpet per
-  linje (`discounted_display_price_total`) og summerer det til
+  kampanjer som «2 for 1» eller gaver til 0 kr. Klienten leser det reelle
+  beløpet per linje (`discounted_display_price_total`) og summerer det til
   `discounted_display_price`. `Oda.belop_etter_rabatt()` bruker det beløpet både i
   minstebeløp-sjekken og i kurvvisningen. Odas urabatterte tall vises i parentes
   når de avviker.
@@ -459,36 +450,39 @@ for bare å lage PDF-en.
 |---|---|---|
 | `MIDDAG_DATA` | `./data` | profil, lager, plan, historikk, cache |
 | `MIDDAG_CREDENTIALS` | `~/.config/middag/oda.env` | Oda-innlogging |
-| `MIDDAG_ODA_CMD` | `node vendor/mcp-oda/dist/index.js`, ellers `scripts/oda-podman.sh` | kjøre mcp-oda på annen måte |
-| `MIDDAG_ODA_DATA` | (mcp-oda: `~/.mcp-oda`) | sesjonskatalog |
+| `MIDDAG_ODA_COOKIES` | `~/.config/middag/oda-cookies.json` | Oda-sesjonen (cookies) |
 | `MIDDAG_GCALENDAR_DIR` | `~/.openclaw/workspace` | hvor `gcalendar.py` ligger |
 | `MIDDAG_OPENCLAW` | `openclaw` i PATH, ellers `~/.npm-global/bin/openclaw` | `lager sjekk --send` (WhatsApp via openclaw) |
 
-## Fork av mcp-oda
+## Oda-klienten og mcp-oda
 
-`vendor/mcp-oda` er en lokal fork av
-[agfagerbakk/mcp-oda](https://github.com/agfagerbakk/mcp-oda), låst til commit
-`62f0b64`, med patchene i `patches/`:
+`middagslib/oda_klient.py` er en Python-port av `oda-client.ts` fra
+[agfagerbakk/mcp-oda](https://github.com/agfagerbakk/mcp-oda) (commit `717fb4e`,
+MIT-lisens, se [LICENSE-mcp-oda](LICENSE-mcp-oda)). Takk til agfagerbakk for
+arbeidet med å kartlegge Odas nettside og API.
 
-- **0001** `recipe ingredients <id>`, også tilgjengelig som MCP-verktøyet
-  `recipes_get_ingredients`. Den gir produkt-ID, pakker per porsjon og
-  basisvare-flagg for hver ingrediens. `recipe details` gir bare fritekst, og
-  det er ikke nok til å slå sammen varer på tvers av retter.
-- **0002** Kurven (`cart list`) eksponerer også det reelle beløpet etter
-  mengderabatter (`discounted_display_price` på kurven, `discounted_line_total`
-  per vare).
+Porten har bare det planleggeren bruker:
 
-`scripts/setup_oda.sh` gjenskaper forken fra upstream og legger på patcher som
-mangler. En patch regnes som lagt på hvis den kan reverseres rent. Slik oppdaterer
-du upstream: endre `PIN`, slett `vendor/`, kjør skriptet på nytt og løs eventuelle
-konflikter.
+| Operasjon | Kilde hos Oda |
+|---|---|
+| Innlogging og brukernavn | `/api/v1/user/login/`, handlekurvsiden og et autentisert API-kall |
+| Produktsøk | Søkesiden. React Query-cachen leses fra `__NEXT_DATA__` eller App Router-strømmen (`self.__next_f.push`) |
+| Lese kurven, legge til varer | `/api/v1/cart/` og `/api/v1/cart/items/` |
+| Oppskrifter: søk, detaljer, ingredienser med produkt-ID og pakker per porsjon | Oppskriftssidene |
+| Egne middager (lister) | `/api/v1/product-lists/` |
+
+To ting er lagt til i forhold til mcp-oda: ingredienser med produkt-ID og pakker
+per porsjon, og kurvbeløp etter mengderabatter. Begge ble først laget som
+patcher til mcp-oda. Endrer Oda nettsiden, er det `oda_klient.py` som må
+oppdateres. Testene i `TestOdaKlientParsing` viser formatene den forventer.
 
 ## Struktur
 
 ```
 middag.py               CLI
 middagslib/
-  oda.py                hviteliste over mcp-oda, innlogging, kurvbeløp etter rabatt
+  oda.py                innlogging, sesjon, ny innlogging ved utløp, kurvbeløp etter rabatt
+  oda_klient.py         HTTP-klient mot Oda (portert fra mcp-oda), sperre for POST-kall
   oppskrifter.py        Oda-oppskrifter (cache 14 d) + egne oppskrifter
   handleliste.py        sammenslåing på tvers av retter, lager, svinn
   planlegger.py         utvalg, dagfordeling, minstebeløp, godkjenning, kurv
@@ -502,10 +496,8 @@ middagslib/
   utskrift.py           PDF av dagens oppskrift til skriveren
   lagring.py            stier og atomisk JSON-lagring
 scripts/
-  setup_oda.sh          klon, patch og bygg mcp-oda
   sett_oda_passord.sh   skriv oda.env med rettighet 600
-  oda-podman.sh         mcp-oda i container (podman/Docker) når Node mangler
-patches/                våre endringer i mcp-oda
+LICENSE-mcp-oda         lisensen til koden oda_klient.py er portert fra
 tests/                  tester mot ekte Oda-oppskriftsdata i fixtures/
 ```
 

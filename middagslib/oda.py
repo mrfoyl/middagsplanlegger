@@ -1,42 +1,27 @@
-"""Tynt lag over mcp-oda-CLI-en (forken i vendor/mcp-oda).
+"""Oda for middagsplanleggeren: innlogging, sesjon og de få operasjonene vi trenger.
+
+HTTP-delen ligger i oda_klient.py (portert fra mcp-oda). Her ligger det som er
+spesifikt for oss: legitimasjonsfilen, ny innlogging når sesjonen er utløpt,
+og kontroll av at vi aldri jobber mot Odas anonyme gjestekurv.
 
 Sikkerhet:
-- Bare kommandoene i TILLATT kan kjøres. Ingen av dem bestiller eller betaler
-  (mcp-oda har ingen slik kommando), og vi stenger i tillegg ute alt som
-  fjerner fra kurven, tømmer kurven, velger leveringstid eller legger hele
-  oppskrifter i kurven forbi lagersjekken.
-- Passordet leses fra en fil med rettighet 600 utenfor repoet og sendes til
-  mcp-oda via stdin (--pass-stdin), aldri som argument eller i logg.
-- Unntak: produktkategorien hentes fra den offentlige produktsiden med en
-  vanlig GET uten innlogging eller informasjonskapsler. Den kan ikke endre noe.
+- Klienten har ingen metoder for å bestille, betale, fjerne fra kurven, tømme
+  den, velge leveringstid eller slette lister, og POST-kall sperres utenfor en
+  hviteliste (se oda_klient._post).
+- Passordet leses fra en fil med rettighet 600 utenfor repoet og sendes bare i
+  innloggingskallet til oda.com, aldri som argument eller i logg.
+- Sesjonen (cookies) lagres i ~/.config/middag/oda-cookies.json med rettighet 600.
+- Produktkategorien hentes fra den offentlige produktsiden uten cookies.
 """
 import html
 import json
 import os
 import re
-import shlex
-import shutil
 import stat
-import subprocess
 import urllib.request
 from pathlib import Path
 
-from . import lagring
-
-TILLATT = {
-    ("auth", "user"),
-    ("auth", "login"),
-    ("product", "search"),
-    ("product", "add"),
-    ("cart", "list"),
-    ("recipe", "search"),
-    ("recipe", "details"),
-    ("recipe", "ingredients"),
-    ("list", "all"),
-    ("list", "get"),
-    ("list", "create"),
-    ("list", "add"),
-}
+from .oda_klient import AuthFeil, KlientFeil, OdaKlient, Sperret
 
 MIDDAG_FILTER = "meal:65"  # Oda sitt "Middag"-filter i oppskriftssøk
 
@@ -51,6 +36,10 @@ class IkkeTillatt(OdaFeil):
 
 def legitimasjonsfil() -> Path:
     return Path(os.environ.get("MIDDAG_CREDENTIALS", Path.home() / ".config" / "middag" / "oda.env"))
+
+
+def cookiefil() -> Path:
+    return Path(os.environ.get("MIDDAG_ODA_COOKIES", Path.home() / ".config" / "middag" / "oda-cookies.json"))
 
 
 def les_legitimasjon() -> tuple:
@@ -78,113 +67,78 @@ def les_legitimasjon() -> tuple:
     return epost, passord
 
 
-def _grunnkommando() -> list:
-    egen = os.environ.get("MIDDAG_ODA_CMD")
-    if egen:
-        return shlex.split(egen)
-    cli = lagring.ROT / "vendor" / "mcp-oda" / "dist" / "index.js"
-    if not cli.exists():
-        raise OdaFeil(f"Finner ikke {cli}. Kjør scripts/setup_oda.sh først.")
-    if shutil.which("node"):
-        return ["node", str(cli)]
-    # Ingen Node på maskinen: kjør i container
-    return [str(lagring.ROT / "scripts" / "oda-podman.sh")]
-
-
-def _er_auth_feil(tekst: str) -> bool:
-    t = tekst.lower()
-    return any(s in t for s in ("authentication may be required", "http 401", "http 403", "not logged in", "login required"))
-
-
-def _er_innlogget(status: str) -> bool:
-    t = status.lower()
-    return "logged in as" in t or "successfully logged in" in t
-
-
 class Oda:
-    """Kjører mcp-oda. `kjor` kan byttes ut i tester."""
+    """Odas operasjoner for planleggeren. `klient` kan byttes ut i tester."""
 
-    def __init__(self, kjor=None):
-        self._kjor = kjor or self._subprocess
+    def __init__(self, klient=None):
+        # Gamle installasjoner hadde sesjonen i ~/.mcp-oda; den leses én gang
+        self.klient = klient or OdaKlient(cookiefil(), Path.home() / ".mcp-oda" / "cookies.json")
 
-    @staticmethod
-    def _subprocess(args, stdin=None):
-        cmd = _grunnkommando()
-        datadir = os.environ.get("MIDDAG_ODA_DATA")
-        if datadir:
-            cmd += ["--data-dir", datadir]
-        r = subprocess.run(cmd + args, input=stdin, capture_output=True, text=True, timeout=120)
-        return r.returncode, r.stdout, r.stderr
-
-    def _kall(self, args, stdin=None, prov_innlogging=True):
-        if tuple(args[:2]) not in TILLATT:
-            raise IkkeTillatt(f"Kommandoen '{' '.join(args[:2])}' er ikke tillatt i middagsplanleggeren.")
-        kode, ut, feil = self._kjor(args, stdin)
-        if kode != 0 and prov_innlogging and args[0] != "auth" and _er_auth_feil(feil + ut):
-            self.logg_inn()
-            kode, ut, feil = self._kjor(args, stdin)
-        if kode != 0:
-            raise OdaFeil(f"mcp-oda {' '.join(args[:2])} feilet: {(feil or ut).strip()[:400]}")
-        return ut if ut.strip() else feil
-
-    def _json(self, args):
-        ut = self._kall(args)
+    def _kall(self, operasjon, *args, prov_innlogging=True):
         try:
-            return json.loads(ut)
-        except json.JSONDecodeError as e:
-            raise OdaFeil(f"Uventet svar fra mcp-oda {' '.join(args[:2])}: {ut[:200]}") from e
+            return operasjon(*args)
+        except AuthFeil:
+            if not prov_innlogging:
+                raise OdaFeil("Ikke logget inn hos Oda.") from None
+            self.logg_inn()
+            try:
+                return operasjon(*args)
+            except KlientFeil as e:
+                raise OdaFeil(str(e)) from None
+        except Sperret as e:
+            raise IkkeTillatt(str(e)) from None
+        except KlientFeil as e:
+            raise OdaFeil(str(e)) from None
 
     # --- innlogging ---
 
     def logg_inn(self) -> None:
         epost, passord = les_legitimasjon()
         try:
-            self._kall(["auth", "login", "--user", epost, "--pass-stdin"], stdin=passord + "\n", prov_innlogging=False)
-        except OdaFeil as e:
-            raise OdaFeil(f"Innlogging hos Oda feilet. Sjekk e-post/passord i {legitimasjonsfil()}. ({e})") from None
+            ok = self.klient.logg_inn(epost, passord)
+        except KlientFeil as e:
+            raise OdaFeil(f"Innlogging hos Oda feilet ({e}).") from None
+        if not ok:
+            raise OdaFeil(f"Innlogging hos Oda feilet. Sjekk e-post/passord i {legitimasjonsfil()}.")
 
     def bruker(self) -> str:
-        return self._kall(["auth", "user"], prov_innlogging=False).strip()
+        navn = self.klient.bruker()
+        return f"Innlogget som {navn}." if navn else "Ikke innlogget."
 
     def sikre_innlogget(self) -> str:
         """Sørg for innlogget sesjon før vi rører kurven.
 
-        Uten innlogging gir Oda en anonym gjestekurv – den skal vi aldri vise
-        eller fylle, for det er ikke Oles kurv.
+        Uten innlogging gir Oda en anonym gjestekurv. Den skal vi aldri vise
+        eller fylle, for det er ikke brukerens kurv.
         """
-        status = self.bruker()
-        if _er_innlogget(status):
-            return status
+        if self.klient.bruker():
+            return self.bruker()
         self.logg_inn()
-        status = self.bruker()
-        if not _er_innlogget(status):
-            raise OdaFeil(f"Fikk ikke bekreftet innlogging hos Oda ({status}).")
-        return status
+        if not self.klient.bruker():
+            raise OdaFeil("Fikk ikke bekreftet innlogging hos Oda.")
+        return self.bruker()
 
     # --- les ---
 
     def sok_produkt(self, sok: str, side: int = 1) -> dict:
-        return self._json(["product", "search", sok, "--page", str(side)])
+        return self._kall(self.klient.sok_produkter, sok, side)
 
     def sok_oppskrift(self, sok: str = None, side: int = 1, filtre=(MIDDAG_FILTER,)) -> dict:
-        args = ["recipe", "search"] + ([sok] if sok else []) + ["--page", str(side)]
-        if filtre:
-            args += ["--filter", *filtre]
-        return self._json(args)
+        return self._kall(self.klient.sok_oppskrifter, sok, side, list(filtre or ()))
 
     def oppskrift(self, oppskrift_id: int) -> dict:
-        return self._json(["recipe", "ingredients", str(int(oppskrift_id))])
+        return self._kall(self.klient.oppskrift_ingredienser, int(oppskrift_id))
 
     def oppskrift_detaljer(self, oppskrift_id: int) -> dict:
-        return self._json(["recipe", "details", str(int(oppskrift_id))])
+        return self._kall(self.klient.oppskrift_detaljer, int(oppskrift_id))
 
     def kurv(self) -> dict:
-        return self._json(["cart", "list"])
+        return self._kall(self.klient.kurv)
 
     def produkt_kategori(self, produkt_id: int) -> list:
         """Kategoristien til et produkt, f.eks. ["Frukt og grønt", "Frosne grønnsaker"].
 
-        Søket i mcp-oda gir ingen kategori, så vi leser brødsmulestien
+        Søkeresultatene har ingen kategori, så vi leser brødsmulestien
         (schema.org BreadcrumbList) fra den offentlige produktsiden.
         """
         url = f"https://oda.com/no/products/{int(produkt_id)}/"
@@ -212,8 +166,8 @@ class Oda:
 
         Odas eget `display_price` er bare summen av varelinjenes ordinære pris
         og tar ikke høyde for mengderabatter som "2 for 1" -- den rabatten
-        trekkes først fra i `discounted_display_price` (mcp-oda sin
-        parseCartApi), som er det som faktisk belastes ved bestilling.
+        trekkes først fra i `discounted_display_price` (oda_klient.kurv), som
+        er det som faktisk belastes ved bestilling.
         Faller tilbake til display_price for gamle data/fixtures uten feltet.
         """
         if kurv.get("discounted_display_price") is not None:
@@ -234,17 +188,17 @@ class Oda:
         return max(0.0, total)
 
     def lister(self) -> list:
-        return self._json(["list", "all"])
+        return self._kall(self.klient.lister)
 
     # --- skriv (bare legge til) ---
 
     def legg_i_kurv(self, produkt_id: int, antall: int) -> None:
         if antall < 1:
             return
-        self._kall(["product", "add", str(int(produkt_id)), "--count", str(int(antall))])
+        self._kall(self.klient.legg_i_kurv, int(produkt_id), int(antall))
 
     def lag_middagsliste(self, tittel: str, beskrivelse: str) -> dict:
-        return self._json(["list", "create", tittel, "--description", beskrivelse, "--dinner"])
+        return self._kall(self.klient.lag_liste, tittel, beskrivelse, True)
 
     def legg_i_liste(self, liste_id: int, produkt_id: int, antall: int) -> None:
-        self._kall(["list", "add", str(int(liste_id)), str(int(produkt_id)), "--count", str(int(antall))])
+        self._kall(self.klient.legg_i_liste, int(liste_id), int(produkt_id), int(antall))

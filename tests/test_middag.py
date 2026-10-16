@@ -11,6 +11,7 @@ ROT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROT))
 
 from middagslib import billigst, enheter, palegg, handleliste, lager, matvarer, oppskrifter, planlegger, profil, rapport  # noqa: E402
+from middagslib import oda_klient  # noqa: E402
 from middagslib.oda import IkkeTillatt, Oda, OdaFeil  # noqa: E402
 
 FIX = ROT / "tests" / "fixtures"
@@ -22,7 +23,7 @@ def fixture_oppskrift(oid):
 
 
 class FalskOda:
-    """Svarer som mcp-oda, men fra fixtures. Registrerer alt som legges i kurven."""
+    """Svarer som Oda-klienten, men fra fixtures. Registrerer alt som legges i kurven."""
 
     def __init__(self):
         self.innlogget = True
@@ -504,14 +505,15 @@ class TestKurvflyt(MedData):
     def test_sikre_innlogget_logger_inn_ved_gjest(self):
         tilstand = {"inne": False, "kall": []}
 
-        def kjor(args, stdin=None):
-            tilstand["kall"].append(args[:2])
-            if args[:2] == ["auth", "login"]:
+        class Klient:
+            def bruker(self):
+                tilstand["kall"].append("bruker")
+                return "Test" if tilstand["inne"] else None
+
+            def logg_inn(self, epost, passord):
+                tilstand["kall"].append("logg_inn")
                 tilstand["inne"] = True
-                return 0, "", "Successfully logged in as: Test"
-            if args[:2] == ["auth", "user"]:
-                return 0, "", "Logged in as: Test" if tilstand["inne"] else "Not logged in."
-            return 0, "{}", ""
+                return True
 
         with tempfile.TemporaryDirectory() as d:
             fil = Path(d) / "oda.env"
@@ -519,10 +521,10 @@ class TestKurvflyt(MedData):
             fil.chmod(0o600)
             os.environ["MIDDAG_CREDENTIALS"] = str(fil)
             try:
-                Oda(kjor=kjor).sikre_innlogget()
+                Oda(Klient()).sikre_innlogget()
             finally:
                 os.environ.pop("MIDDAG_CREDENTIALS")
-        self.assertEqual(tilstand["kall"], [["auth", "user"], ["auth", "login"], ["auth", "user"]])
+        self.assertEqual(tilstand["kall"][:3], ["bruker", "logg_inn", "bruker"])
 
     def test_ferdig_legger_rester_i_lager(self):
         plan = self._klar_plan()
@@ -833,65 +835,185 @@ class TestEgneOppskrifter(MedData):
             oppskrifter.synk_egen(self.oda, "fredagstaco")
 
 
+class FalskHttp:
+    """Erstatter oda_klient.http. `svar(metode, url, data)` gir (status, hoder, kropp)."""
+
+    def __init__(self, svar=None):
+        self.kall = []
+        self.svar = svar or (lambda m, u, d: (200, [], b"{}"))
+
+    def __call__(self, metode, url, hoder, data=None):
+        self.kall.append((metode, url, hoder, data))
+        return self.svar(metode, url, data)
+
+
+def _flight_html(sporringer) -> str:
+    """Odas App Router-format: React Query-cachen strømmet i flere self.__next_f.push-biter."""
+    tekst = '0:["$","x",{"state":{"queries":' + json.dumps(sporringer) + '}}]'
+    midt = len(tekst) // 2
+    return "".join(f"<script>self.__next_f.push({json.dumps([1, del_])})</script>" for del_ in (tekst[:midt], tekst[midt:]))
+
+
 class TestOdaSikkerhet(unittest.TestCase):
     def setUp(self):
-        self.kall = []
         self._tmp = tempfile.TemporaryDirectory()
         self.fil = Path(self._tmp.name) / "oda.env"
+        self.cookies = Path(self._tmp.name) / "cookies.json"
         os.environ["MIDDAG_CREDENTIALS"] = str(self.fil)
 
     def tearDown(self):
         self._tmp.cleanup()
         os.environ.pop("MIDDAG_CREDENTIALS", None)
 
-    def _oda(self, svar=None):
-        def kjor(args, stdin=None):
-            self.kall.append((args, stdin))
-            return svar(args) if svar else (0, "{}", "")
-        return Oda(kjor=kjor)
+    def _klient(self, svar=None):
+        self.http = FalskHttp(svar)
+        return oda_klient.OdaKlient(self.cookies, transport=self.http)
 
-    def test_farlige_kommandoer_er_sperret(self):
-        oda = self._oda()
-        for args in (["cart", "clear"], ["cart", "remove", "1"], ["slot", "select", "1"], ["recipe", "add", "1"],
-                     ["list", "delete", "1"], ["list", "add-to-cart", "1"], ["checkout"], ["order", "place"]):
-            with self.assertRaises(IkkeTillatt, msg=args):
-                oda._kall(args)
-        self.assertEqual(self.kall, [])
+    def test_ingen_farlige_metoder_finnes(self):
+        for klasse in (Oda, oda_klient.OdaKlient):
+            for navn in dir(klasse):
+                self.assertNotRegex(navn.lower(), "bestill|checkout|order|betal|pay|purchase|remove|clear|delete|slett|fjern|slot|levering")
 
-    def test_ingen_bestillingsmetode_finnes(self):
-        for navn in dir(Oda):
-            self.assertNotRegex(navn.lower(), "bestill|checkout|order|betal|pay|purchase")
+    def test_farlige_post_kall_er_sperret(self):
+        k = self._klient()
+        for url, kropp in (("https://oda.com/api/v1/cart/clear/", {}),
+                           ("https://oda.com/api/v1/slot-picker/info/", {"deliverySlotId": 1}),
+                           ("https://oda.com/api/v1/product-lists/5/", {"title": "x"}),
+                           ("https://oda.com/api/v1/cart/items/?group_by=recipes", {"items": [{"product_id": 1, "quantity": 1}]}),
+                           (oda_klient.CART_ITEMS_API, {"items": [{"product_id": 1, "quantity": -1}]}),
+                           (oda_klient.CART_ITEMS_API, {"items": [{"product_id": 1, "quantity": 0}]}),
+                           (oda_klient.CART_ITEMS_API, {"items": [{"recipe_id": 1, "quantity": -1, "delete": True}]}),
+                           (oda_klient.CART_ITEMS_API, {"items": [{"product_list_id": 1, "quantity": 1}]}),
+                           ("https://oda.com/api/v1/product-lists/5/products/", [{"product_id": 1, "quantity": -2, "delete": True}])):
+            with self.assertRaises(oda_klient.Sperret, msg=url):
+                k._post(url, kropp)
+        self.assertEqual(self.http.kall, [])
 
-    def test_passord_via_stdin_ikke_argument(self):
+    def test_sperret_kall_gir_ikke_tillatt(self):
+        k = self._klient()
+        with self.assertRaises(IkkeTillatt):
+            Oda(k)._kall(k._post, "https://oda.com/api/v1/cart/clear/", {})
+
+    def test_cookies_sendes_bare_til_oda(self):
+        k = self._klient(lambda m, u, d: (302, [("Location", "https://evil.example/")], b""))
+        k.cookies = {"sessionid": "hemmelig"}
+        with self.assertRaises(oda_klient.Sperret):
+            k._get("https://oda.com/no/cart/")
+        self.assertEqual([u for _, u, _, _ in self.http.kall], ["https://oda.com/no/cart/"])
+        with self.assertRaises(oda_klient.Sperret):
+            k._get("http://oda.com/no/")  # ikke https
+
+    def test_innlogging_lagrer_sesjon_privat_og_passord_bare_til_login(self):
         self.fil.write_text("ODA_EMAIL=test@example.com\nODA_PASSWORD=hemmelig123\n")
         self.fil.chmod(0o600)
-        self._oda().logg_inn()
-        args, stdin = self.kall[0]
-        self.assertNotIn("hemmelig123", " ".join(args))
-        self.assertIn("--pass-stdin", args)
-        self.assertEqual(stdin.strip(), "hemmelig123")
+
+        def svar(m, u, d):
+            if u.endswith("/user/login/") and m == "GET":
+                return 200, [("Set-Cookie", "csrftoken=abc; Path=/")], b"<html></html>"
+            return 200, [("Set-Cookie", "sessionid=s1; HttpOnly")], b"{}"
+
+        k = self._klient(svar)
+        Oda(k).logg_inn()
+        med_passord = [(m, u) for m, u, _, d in self.http.kall if d and b"hemmelig123" in d]
+        self.assertEqual(med_passord, [("POST", oda_klient.LOGIN_API)])
+        post_hoder = self.http.kall[-1][2]
+        self.assertEqual(post_hoder["X-CSRFToken"], "abc")
+        self.assertEqual(stat.S_IMODE(self.cookies.stat().st_mode), 0o600)
+        self.assertEqual(json.loads(self.cookies.read_text())["sessionid"], "s1")
 
     def test_nekter_lesbar_legitimasjonsfil(self):
         self.fil.write_text("ODA_EMAIL=a@b.no\nODA_PASSWORD=x\n")
         self.fil.chmod(0o644)
         with self.assertRaisesRegex(OdaFeil, "chmod 600"):
-            self._oda().logg_inn()
+            Oda(self._klient()).logg_inn()
 
     def test_logger_inn_paa_nytt_ved_utlopt_sesjon(self):
         self.fil.write_text("ODA_EMAIL=a@b.no\nODA_PASSWORD=x\n")
         self.fil.chmod(0o600)
-        teller = {"n": 0}
+        teller = {"kurv": 0}
 
-        def svar(args):
-            if args[0] == "cart":
-                teller["n"] += 1
-                if teller["n"] == 1:
-                    return 1, "", "Get cart failed: HTTP 401 (authentication may be required or expired)"
-                return 0, '{"items": []}', ""
-            return 0, "", "Successfully logged in"
+        def svar(m, u, d):
+            if u == oda_klient.CART_API:
+                teller["kurv"] += 1
+                return (401, [], b"") if teller["kurv"] == 1 else (200, [], b'{"items": []}')
+            return 200, [], b"{}"
 
-        self.assertEqual(self._oda(svar).kurv(), {"items": []})
-        self.assertEqual([a[0][:2] for a in self.kall], [["cart", "list"], ["auth", "login"], ["cart", "list"]])
+        k = self._klient(svar)
+        self.assertEqual(Oda(k).kurv()["items"], [])
+        self.assertEqual([u for _, u, _, _ in self.http.kall if "api" in u],
+                         [oda_klient.CART_API, oda_klient.LOGIN_API, oda_klient.CART_API])
+
+    def test_gammel_sesjonsfil_leses(self):
+        gammel = Path(self._tmp.name) / "mcp-oda-cookies.json"
+        gammel.write_text('{"sessionid": "gammel"}')
+        k = oda_klient.OdaKlient(self.cookies, gammel, transport=FalskHttp())
+        self.assertEqual(k.cookies, {"sessionid": "gammel"})
+        self.assertEqual(json.loads(self.cookies.read_text()), {"sessionid": "gammel"})  # flyttet
+        self.assertEqual(stat.S_IMODE(self.cookies.stat().st_mode), 0o600)
+
+
+class TestOdaKlientParsing(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _klient(self, sider: dict):
+        def svar(m, u, d):
+            for nokkel, kropp in sider.items():
+                if nokkel in u:
+                    return 200, [], kropp.encode() if isinstance(kropp, str) else kropp
+            return 404, [], b""
+        return oda_klient.OdaKlient(Path(self._tmp.name) / "c.json", transport=FalskHttp(svar))
+
+    def test_produktsok_fra_app_router_stroem(self):
+        varer = [{"type": "product", "attributes": {"id": 8414, "fullName": "R Hakket Spinat [fryst] {450 g}", "nameExtra": "450 g",
+                                                     "grossPrice": "15.10", "grossUnitPrice": "33.56", "unitPriceQuantityAbbreviation": "kg",
+                                                     "availability": {"isAvailable": False, "code": "sold_out"}}},
+                 {"type": "recipe", "attributes": {"id": 1}}]
+        html = _flight_html([{"queryKey": [{"_id": "mixedSearch"}], "state": {"data": {"items": varer, "attributes": {"hasMoreItems": True}}}}])
+        res = self._klient({"/search/products/": html}).sok_produkter("spinat")
+        self.assertTrue(res["has_more"])
+        self.assertEqual(res["items"], [{"id": 8414, "name": "R Hakket Spinat [fryst] {450 g}", "subtitle": "450 g", "price": 15.1,
+                                         "relative_price": 33.56, "relative_price_unit": "/kg",
+                                         "availability": {"is_available": False, "code": "sold_out", "description": ""}}])
+
+    def test_oppskrift_ingredienser(self):
+        data = {"id": 3004, "title": "Kyllinggryte", "defaultNumPortions": 4, "cookingDurationString": "30 min",
+                "tags": [{"id": 7, "title": "Kylling", "groupKey": "main_ingredient"}], "frontUrl": "/no/recipes/3004/",
+                "ingredientsDisplayList": [{"id": 1, "title": "Kremfløte", "displayQuantity": "3", "displayUnit": "dl"}],
+                "ingredients": [{"id": 1, "ingredient": {"id": 433, "title": "Kremfløte"}, "isBasic": False, "portionQuantity": "0.25",
+                                 "product": {"id": 433, "name": "Kremfløte", "fullName": "TINE Kremfløte", "nameExtra": "3 dl", "grossPrice": "27.90"}}]}
+        html = '<script id="__NEXT_DATA__" type="application/json">' + json.dumps(
+            {"props": {"pageProps": {"dehydratedState": {"queries": [{"queryKey": ["recipeDetailApi", 3004], "state": {"data": data}}]}}}}) + "</script>"
+        r = self._klient({"/recipes/3004": html}).oppskrift_ingredienser(3004)
+        self.assertEqual(r["default_portions"], 4)
+        self.assertEqual(r["tags"], [{"id": 7, "title": "Kylling", "group": "main_ingredient"}])
+        i = r["ingredients"][0]
+        self.assertEqual((i["ingredient_id"], i["packages_per_portion"], i["display_quantity"], i["display_unit"]), (433, 0.25, 3.0, "dl"))
+        self.assertEqual(i["product"], {"id": 433, "name": "Kremfløte", "full_name": "TINE Kremfløte", "name_extra": "3 dl", "price": 27.9, "available": True})
+
+    def test_kurv_med_mengderabatt_og_grupper(self):
+        kurv = {"display_price": "100.00", "product_quantity_count": 3,
+                "items": [{"item_id": 1, "quantity": 2, "display_price_total": "40.00", "discounted_display_price_total": "20.00",
+                           "product": {"id": 5, "full_name": "Agurk", "gross_price": "20.00"}}],
+                "groups": [{"title": "Taco", "group_type": "recipe",
+                            "items": [{"item_id": 2, "quantity": 1, "display_price_total": "60.00", "product": {"id": 6, "name": "Lefser", "gross_price": "60.00"}}]}]}
+        k = self._klient({"/api/v1/cart/": json.dumps(kurv)})
+        res = k.kurv()
+        self.assertEqual(res["discounted_display_price"], 80.0)
+        self.assertEqual([x["id"] for x in res["items"]], [5, 6])
+        self.assertEqual(res["items"][1]["group_title"], "Taco")
+
+    def test_kurv_auth_feil_er_ikke_tom_kurv(self):
+        k = oda_klient.OdaKlient(Path(self._tmp.name) / "c.json", transport=FalskHttp(lambda m, u, d: (403, [], b"nope")))
+        with self.assertRaises(oda_klient.AuthFeil):
+            k.kurv()
+
+    def test_balansert_hopper_over_strenger(self):
+        s = '[1,"a]b\\"c",[2]] rest'
+        self.assertEqual(oda_klient.match_balansert(s, 0), '[1,"a]b\\"c",[2]]')
 
 
 class TestProfil(MedData):

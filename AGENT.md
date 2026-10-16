@@ -11,7 +11,7 @@ til brukeren.
 ## Absolutte regler
 
 1. **Aldri bestill eller betal.** Verktøyet kan ikke, og du skal ikke prøve med
-   andre midler, heller ikke via mcp-oda direkte. Brukeren trykker «bestill» selv.
+   andre midler, heller ikke ved å kalle Oda direkte. Brukeren trykker «bestill» selv.
 2. **Ikke legg noe i kurven før brukeren har sett planen og sagt ja.** `plan kurv --utfor` kjøres
    bare etter at brukeren eksplisitt har godkjent planen i denne samtalen.
 3. **Spør heller enn å gjette** om hva som finnes hjemme. Svar på `❓ Må avklares`
